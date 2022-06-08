@@ -1,0 +1,37 @@
+
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <polygon id="path-i-7b00mpke-1" points="88.9534884 89.5850622 89.4767442 89.5850622 89.4767442 108.556017 88.9534884 109.082988 0 38.4688797 0 18.9709544"></polygon>
+        <polygon id="path-i-7b00mpke-2" points="88.9534884 108.556017 89.4767442 108.029046 89.4767442 126.473029 88.9534884 127 0 56.3858921 0 37.9419087"></polygon>
+        <polygon id="path-i-7b00mpke-3" points="89 89.5850622 89 109.082988 0 38.4688797 0 18.9709544"></polygon>
+        <polygon id="path-i-7b00mpke-4" points="89 108.556017 89 127 0 56.9128631 7.90478794e-14 37.9419087"></polygon>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="blue-left-/-pink-right-/-black-top" transform="translate(11.000000, 0.000000)">
+            <polygon id="Path-2" fill="#333333" points="0 73.3090909 86.9058824 0 178 73.3090909 178 73.8327273 89 144 0 73.8327273"></polygon>
+            <g id="left" transform="translate(0.000000, 73.000000)">
+                <path d="M88.9534884,70.6141079 L89.4767442,70.6141079 C89.5897228,79.4028362 89.5897228,85.9021446 89.4767442,90.1120332 C89.3637656,94.3219218 89.189347,94.3219218 88.9534884,90.1120332 L0,19.4979253 L0,0 L88.9534884,70.6141079 Z" id="Path" fill="#40C4FF"></path>
+                <g id="Path">
+                    <use fill="#3DC4FF" xlink:href="#path-i-7b00mpke-1"></use>
+                    <use fill-opacity="0.25" fill="#FFFFFF" xlink:href="#path-i-7b00mpke-1"></use>
+                </g>
+                <g id="Path">
+                    <use fill="#3DC4FF" xlink:href="#path-i-7b00mpke-2"></use>
+                    <use fill-opacity="0.5" fill="#FFFFFF" xlink:href="#path-i-7b00mpke-2"></use>
+                </g>
+            </g>
+            <g id="right" transform="translate(133.500000, 136.500000) scale(-1, 1) translate(-133.500000, -136.500000) translate(89.000000, 73.000000)">
+                <polygon id="Path" fill="#E040FB" points="89 70.6141079 89 90.1120332 3.95239397e-14 19.4979253 0 0"></polygon>
+                <g id="Path">
+                    <use fill="#E040FB" xlink:href="#path-i-7b00mpke-3"></use>
+                    <use fill-opacity="0.25" fill="#FFFFFF" xlink:href="#path-i-7b00mpke-3"></use>
+                </g>
+                <g id="Path">
+                    <use fill="#E040FB" xlink:href="#path-i-7b00mpke-4"></use>
+                    <use fill-opacity="0.5" fill="#FFFFFF" xlink:href="#path-i-7b00mpke-4"></use>
+                </g>
+            </g>
+            <path d="M84.1620405,107.937475 C84.1620405,107.937475 109.853843,75.4615803 109.834907,61.1085716 C109.815951,46.755563 98.2972926,35.1049735 84.1072525,35.0862291 C69.9172125,35.0675299 58.4292707,46.6877653 58.448193,61.0407739 C58.467162,75.3937826 84.1620405,107.937475 84.1620405,107.937475 Z" id="Shape" fill="#FFFFFF" fill-rule="nonzero" transform="translate(84.141550, 71.511852) scale(-1, 1) rotate(-130.000000) translate(-84.141550, -71.511852) "></path>
+        </g>
+    </g>
+</svg>

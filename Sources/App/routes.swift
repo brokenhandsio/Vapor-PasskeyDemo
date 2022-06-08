@@ -5,10 +5,24 @@ func routes(_ app: Application) throws {
     app.get { req in
         return req.view.render("index", ["title": "Hello Vapor!"])
     }
-
-    app.get("hello") { req -> String in
-        return "Hello, world!"
+    
+    // step 1 for registration
+    app.get("registration_initialize") { req -> HTTPStatus in
+        return .notImplemented
+    }
+    
+    // step 2 for registration
+    app.post("registration_finalize") { req -> HTTPStatus in
+        return .notImplemented
     }
 
-    try app.register(collection: TodoController())
+    // step 1 for authentication
+    app.get("authentication_initialize") { req -> HTTPStatus in
+        return .notImplemented
+    }
+    
+    // step 2 for authentication
+    app.post("authentication_finalize") { req -> HTTPStatus in
+        return .notImplemented
+    }
 }
