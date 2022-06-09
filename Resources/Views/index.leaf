@@ -86,19 +86,32 @@
   <body class="text-center">
     
 <main class="form-signin w-100 m-auto">
-  <form>
+  <form class="mb-4">
     <img class="mb-4" src="/images/vapor-logo.svg" alt="Vapor Logo" width="72">
     <h1 class="h3 mb-3 fw-normal">Vapor Passkey Demo</h1>
 
-    <div class="form-floating">
-      <input type="username" class="form-control" id="floatingInput" placeholder="username" autocomplete="username webauthn">
-      <label for="floatingInput">Username</label>
+    <div class="alert alert-danger d-none" id="alert" role="alert">
+      Something went wrong:
+      <div id="alert-message"></div>
     </div>
-    <button class="w-100 mt-3 btn btn-lg btn-primary" type="submit">Sign in</button>
+
+    <div class="form-floating">
+      <input type="username" class="form-control" id="username" placeholder="username" autocomplete="username webauthn">
+      <label for="username">Username</label>
+    </div>
+    <button class="w-100 mt-3 btn btn-lg btn-primary" type="submit" onclick="getAssertion()">Sign in</button>
   </form>
+
+  <div class="w-100 m-auto mt-3">
+    <h6>
+      Don't have an account? Register now!
+    </h6>
+    <button class="w-100 btn btn-lg btn-primary" type="submit" onclick="makeCredential()">Register</button>
+  </div>
 </main>
 
-
+<script type="application/javascript" src="/scripts/base64.js"></script>
+<script type="application/javascript" src="/scripts/webauthn.js"></script>
     
   </body>
 </html>

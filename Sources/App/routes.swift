@@ -6,9 +6,14 @@ func routes(_ app: Application) throws {
         return req.view.render("index", ["title": "Hello Vapor!"])
     }
     
-    // step 1 for registration
-    app.get("registration_initialize") { req -> HTTPStatus in
-        return .notImplemented
+    app.get("makeCredential") { req -> MakeCredentialResponse in
+        let username = try req.query.get(String.self, at: "username")
+        let userID = UUID()
+        let challenge = [UInt8].random(count: 32).base64
+        req.session.data["challenge"] = challenge
+        req.session.data["username"] = username
+        req.session.data["userID"] = userID.uuidString
+        return MakeCredentialResponse(userID: userID.uuidString.base64String(), challenge: challenge)
     }
     
     // step 2 for registration
@@ -25,4 +30,9 @@ func routes(_ app: Application) throws {
     app.post("authentication_finalize") { req -> HTTPStatus in
         return .notImplemented
     }
+}
+
+struct MakeCredentialResponse: Content {
+    let userID: String
+    let challenge: String
 }
