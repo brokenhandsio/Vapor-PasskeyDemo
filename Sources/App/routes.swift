@@ -61,18 +61,7 @@ func routes(_ app: Application) throws {
         }
         switch authData {
         case .byteString(let array):
-            let idLengthBytes = array[53..<55]
-            let idLengthData = Data(idLengthBytes)
-            let idLength: UInt16 = idLengthData.toInteger(endian: .big)
-            let credentialIDEndIndex = Int(idLength) + 55
-            
-            let credentialID = array[55..<credentialIDEndIndex]
-            let publicKeyBytes = array[credentialIDEndIndex...]
-            guard let publicKeyObject = try CBOR.decode(Array(publicKeyBytes)) else {
-                throw Abort(.badRequest)
-            }
-            req.logger.debug("Credential ID is \(credentialID)")
-            req.logger.debug("Public Key Object is \(publicKeyObject)")
+            try parseAttestationObject(array, logger: req.logger)
         default:
             throw Abort(.badRequest)
         }
@@ -90,7 +79,31 @@ func routes(_ app: Application) throws {
         return .notImplemented
     }
     
-    func parseAttestationObject(_ bytes: [UInt8]) throws {
+    func parseAttestedData(_ data: [UInt8], logger: Logger) throws -> AttestedCredentialData {
+        // We've parsed the first 37 bytes so far, the next bytes now should be the attested credential data
+        // See https://w3c.github.io/webauthn/#sctn-attested-credential-data
+        let aaguidLength = 16
+        let aaguid = data[37..<(37 + aaguidLength)] // To byte at index 52
+        
+        let idLengthBytes = data[53..<55] // Length is 2 bytes
+        let idLengthData = Data(idLengthBytes)
+        let idLength: UInt16 = idLengthData.toInteger(endian: .big)
+        let credentialIDEndIndex = Int(idLength) + 55
+        
+        let credentialID = data[55..<credentialIDEndIndex]
+        let publicKeyBytes = data[credentialIDEndIndex...]
+        guard let publicKeyObject = try CBOR.decode(Array(publicKeyBytes)) else {
+            throw Abort(.badRequest)
+        }
+        logger.debug("Credential ID is \(credentialID)")
+        logger.debug("Public Key Object is \(publicKeyObject)")
+        
+        #warning("Finish")
+        
+        return AttestedCredentialData(aaguid: Array(aaguid), credentialID: Array(credentialID), publicKey: Array(publicKeyBytes))
+    }
+    
+    func parseAttestationObject(_ bytes: [UInt8], logger: Logger) throws {
         let minAuthDataLength = 37
         let minAttestedAuthLength = 55
         let maxCredentialIDLength = 1023
@@ -109,12 +122,10 @@ func routes(_ app: Application) throws {
             guard bytes.count > minAttestedAuthLength else {
                 throw WebAuthnError.attestedCredentialDataMissing
             }
-//            validError := a.unmarshalAttestedData(rawAuthData)
-//            if validError != nil {
-//                return validError
-//            }
-//            attDataLen := len(a.AttData.AAGUID) + 2 + len(a.AttData.CredentialID) + len(a.AttData.CredentialPublicKey)
-//            remaining = remaining - attDataLen
+            let attestedCredentialData = try parseAttestedData(bytes, logger: logger)
+            // 2 is the bytes storing the size of the credential ID
+            let credentialDataLength = attestedCredentialData.aaguid.count + 2 + attestedCredentialData.credentialID.count + attestedCredentialData.publicKey.count
+            remainingCount -= credentialDataLength
         } else {
             if !flags.extensionDataIncluded && bytes.count != minAuthDataLength {
                 throw WebAuthnError.attestedCredentialFlagNotSet
@@ -226,3 +237,9 @@ extension IntegerTransform {
 
 extension Data: IntegerTransform {}
 extension Array: IntegerTransform where Element: FixedWidthInteger {}
+
+struct AttestedCredentialData {
+    let aaguid: [UInt8]
+    let credentialID: [UInt8]
+    let publicKey: [UInt8]
+}
