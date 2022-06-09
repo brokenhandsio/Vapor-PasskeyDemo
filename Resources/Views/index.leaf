@@ -95,6 +95,10 @@
       <div id="alert-message"></div>
     </div>
 
+    <div class="alert alert-success d-none" id="login-message" role="alert">
+      Registration Complete! Now try logging in!
+    </div>
+
     <div class="form-floating">
       <input type="username" class="form-control" id="username" placeholder="username" autocomplete="username webauthn">
       <label for="username">Username</label>
