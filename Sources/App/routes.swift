@@ -65,11 +65,38 @@ func routes(_ app: Application) throws {
         guard let publicKeyObject = try CBOR.decode(credentialsData.publicKey) else {
             throw Abort(.badRequest)
         }
+        // This is now in COSE format
+        // https://www.iana.org/assignments/cose/cose.xhtml#algorithms
         guard let keyTypeRaw = publicKeyObject[.unsignedInt(1)], case let .unsignedInt(keyType) = keyTypeRaw else {
             throw Abort(.badRequest)
         }
+        guard let algorithmRaw = publicKeyObject[.unsignedInt(3)], case let .negativeInt(algorithmNegative) = algorithmRaw else {
+            throw Abort(.badRequest)
+        }
+        // https://github.com/unrelentingtech/SwiftCBOR#swiftcbor
+        // Negative integers are decoded as NegativeInt(UInt), where the actual number is -1 - i
+        let algorithm: Int = -1 - Int(algorithmNegative)
+        
+        // Curve is key -1 - or -0 for SwiftCBOR
+        // X Coordinate is key -2, or NegativeInt 1 for SwiftCBOR
+        // Y Coordinate is key -3, or NegativeInt 2 for SwiftCBOR
+        
+        guard let curveRaw = publicKeyObject[.negativeInt(0)], case let .unsignedInt(curve) = curveRaw else {
+            throw Abort(.badRequest)
+        }
+        guard let xCoordRaw = publicKeyObject[.negativeInt(1)], case let .byteString(xCoordinateBytes) = xCoordRaw else {
+            throw Abort(.badRequest)
+        }
+        guard let yCoordRaw = publicKeyObject[.negativeInt(2)], case let .byteString(yCoordinateBytes) = yCoordRaw else {
+            throw Abort(.badRequest)
+        }
+        
         req.logger.debug("Key type was \(keyType)")
-
+        req.logger.debug("Algorithm was \(algorithm)")
+        req.logger.debug("Curve was \(curve)")
+        req.logger.debug("x-coordinate was \(xCoordinateBytes)")
+        req.logger.debug("y-coordinate was \(yCoordinateBytes)")
+        
         return .ok
     }
     
