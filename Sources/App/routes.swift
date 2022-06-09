@@ -56,15 +56,19 @@ func routes(_ app: Application) throws {
         req.logger.debug("Got COBR decoded data: \(decodedAttestationObject)")
         
         // Ignore format/statement for now
-        guard let authData = decodedAttestationObject["authData"] else {
+        guard let authData = decodedAttestationObject["authData"], case let .byteString(authDataBytes) = authData else {
             throw Abort(.badRequest)
         }
-        switch authData {
-        case .byteString(let array):
-            try parseAttestationObject(array, logger: req.logger)
-        default:
+        guard let credentialsData = try parseAttestationObject(authDataBytes, logger: req.logger) else {
             throw Abort(.badRequest)
         }
+        guard let publicKeyObject = try CBOR.decode(credentialsData.publicKey) else {
+            throw Abort(.badRequest)
+        }
+        guard let keyTypeRaw = publicKeyObject[.unsignedInt(1)], case let .unsignedInt(keyType) = keyTypeRaw else {
+            throw Abort(.badRequest)
+        }
+        req.logger.debug("Key type was \(keyType)")
 
         return .ok
     }
@@ -103,10 +107,12 @@ func routes(_ app: Application) throws {
         return AttestedCredentialData(aaguid: Array(aaguid), credentialID: Array(credentialID), publicKey: Array(publicKeyBytes))
     }
     
-    func parseAttestationObject(_ bytes: [UInt8], logger: Logger) throws {
+    func parseAttestationObject(_ bytes: [UInt8], logger: Logger) throws -> AttestedCredentialData? {
         let minAuthDataLength = 37
         let minAttestedAuthLength = 55
         let maxCredentialIDLength = 1023
+        // What to do when we don't have this
+        var credentialsData: AttestedCredentialData? = nil
         
         guard bytes.count >= minAuthDataLength else {
             throw WebAuthnError.authDataTooShort
@@ -126,6 +132,7 @@ func routes(_ app: Application) throws {
             // 2 is the bytes storing the size of the credential ID
             let credentialDataLength = attestedCredentialData.aaguid.count + 2 + attestedCredentialData.credentialID.count + attestedCredentialData.publicKey.count
             remainingCount -= credentialDataLength
+            credentialsData = attestedCredentialData
         } else {
             if !flags.extensionDataIncluded && bytes.count != minAuthDataLength {
                 throw WebAuthnError.attestedCredentialFlagNotSet
@@ -143,6 +150,7 @@ func routes(_ app: Application) throws {
         guard remainingCount == 0 else {
             throw WebAuthnError.leftOverBytes
         }
+        return credentialsData
     }
 }
 
