@@ -4,6 +4,34 @@ import Logging
 import Foundation
 
 public enum WebAuthn {
+    public static func validateAssertion(_ data: AssertionCredential, challengeProvided: String, publicKey: P256.Signing.PublicKey, logger: Logger) throws {
+        guard let clientObjectData = Data(base64Encoded: data.response.clientDataJSON) else {
+            throw WebAuthnError.badRequestData
+        }
+        let clientObject = try JSONDecoder().decode(ClientDataObject.self, from: clientObjectData)
+        guard challengeProvided == clientObject.challenge else {
+            throw WebAuthnError.validationError
+        }
+        let clientDataJSONHash = SHA256.hash(data: clientObjectData)
+        
+        var base64AssertionString = data.response.authenticatorData.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while base64AssertionString.count % 4 != 0 {
+            base64AssertionString = base64AssertionString.appending("=")
+        }
+        guard let authenticatorData = Data(base64Encoded: base64AssertionString) else {
+            throw WebAuthnError.badRequestData
+        }
+        let signedData = authenticatorData + clientDataJSONHash
+        
+        guard let signatureData = Data(base64Encoded: data.response.signature) else {
+            throw WebAuthnError.badRequestData
+        }
+        let signature = try P256.Signing.ECDSASignature(rawRepresentation: signatureData)
+        guard publicKey.isValidSignature(signature, for: signedData) else {
+            throw WebAuthnError.validationError
+        }
+    }
+    
     public static func parseRegisterCredentials(_ data: RegisterWebAuthnCredentialData, challengeProvided: String, origin: String, logger: Logger) throws -> Credential {
         guard let clientObjectData = Data(base64Encoded: data.response.clientDataJSON) else {
             throw WebAuthnError.badRequestData

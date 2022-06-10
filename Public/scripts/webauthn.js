@@ -139,7 +139,7 @@ async function getAssertion() {
 
         const publicKeyCredentialRequestOptions = {
             challenge: bufferDecode(authenticateJson.challenge),
-            allowCredentials: allowedCredentials,
+            // allowCredentials: allowedCredentials,
         }
         const credential = await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
         console.log(credential);

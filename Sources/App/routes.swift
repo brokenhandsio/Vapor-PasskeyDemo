@@ -83,8 +83,18 @@ func routes(_ app: Application) throws {
     
     // step 2 for authentication
     authSessionRoutes.post("authenticate") { req -> HTTPStatus in
-        return .notImplemented
+        guard let challenge = req.session.data["challenge"], let userIDString = req.session.data["userID"], let userID = UUID(uuidString: userIDString) else {
+            throw Abort(.unauthorized)
+        }
+        let data = try req.content.decode(AssertionCredential.self)
+        guard let credential = try await WebAuthnCredential.query(on: req.db).filter(\.$id == data.id).with(\.$user).first(), credential.$user.id == userID else {
+            throw Abort(.unauthorized)
+        }
+        let publicKey = try P256.Signing.PublicKey(pemRepresentation: credential.publicKey)
+        try WebAuthn.validateAssertion(data, challengeProvided: challenge, publicKey: publicKey, logger: req.logger)
+        return .ok
     }
 }
 
 extension RegisterWebAuthnCredentialData: Content {}
+extension AssertionCredential: Content {}
