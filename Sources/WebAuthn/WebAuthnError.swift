@@ -4,4 +4,6 @@ public enum WebAuthnError: Error {
     case leftOverBytes
     case attestedCredentialFlagNotSet
     case attestedCredentialDataMissing
+    case badRequestData
+    case validationError
 }

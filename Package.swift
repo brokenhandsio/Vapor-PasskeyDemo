@@ -14,6 +14,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/leaf.git", from: "4.0.0"),
         .package(url: "https://github.com/unrelentingtech/SwiftCBOR.git", from: "0.4.5"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.0.0"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -21,6 +22,7 @@ let package = Package(
             dependencies: [
                 "SwiftCBOR",
                 .product(name: "Crypto", package: "swift-crypto"),
+                .product(name: "Logging", package: "swift-log"),
             ]
         ),
         .target(
