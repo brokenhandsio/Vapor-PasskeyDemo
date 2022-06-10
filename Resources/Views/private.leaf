@@ -1,0 +1,11 @@
+#extend("base"):
+  #export("body"):
+    <main class="form-signin w-100 m-auto">
+      <h1>Hello #(username)!</h1>
+
+      <form method="POST" action="/logout">
+        <button type="submit" class="btn btn-primary">Logout</button>
+      <form>
+    </main>
+  #endexport
+#endextend

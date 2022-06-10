@@ -17,3 +17,5 @@ final class User: Model, Content {
         self.username = username
     }
 }
+
+extension User: ModelSessionAuthenticatable {}

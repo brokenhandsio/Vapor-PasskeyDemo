@@ -7,14 +7,6 @@ function showErrorAlert(msg) {
     document.getElementById("alert").classList.remove("d-none");
 }
 
-function showLoginMessage() {
-    document.getElementById("login-message").classList.remove("d-none");
-}
-
-function hideLoginMessage() {
-    document.getElementById("login-message").classList.add("d-none");
-}
-
 var state = {
     createResponse: null,
     publicKeyCredential: null,
@@ -33,7 +25,6 @@ function setUser() {
 
 async function makeCredential() {
     hideErrorAlert();
-    hideLoginMessage();
     console.log("Fetching options for new credential");
     if (document.getElementById("username").value === "") {
         showErrorAlert("Please enter a username");
@@ -111,7 +102,7 @@ async function registerNewCredential(newCredential) {
         if (!registerResponse.ok) {
             throw new Error(`HTTP error: ${registerResponse.status}`);
         }
-        showLoginMessage();
+        window.location = '/private';
     } catch (error) {
         console.log(error);
         showErrorAlert(error.message);
@@ -120,7 +111,6 @@ async function registerNewCredential(newCredential) {
 
 async function getAssertion() {
     hideErrorAlert();
-    hideLoginMessage();
     if (document.getElementById("username").value === "") {
         showErrorAlert("Please enter a username");
         return;

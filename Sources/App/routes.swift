@@ -5,10 +5,24 @@ import Crypto
 
 func routes(_ app: Application) throws {
     app.get { req in
-        return req.view.render("index", ["title": "Hello Vapor!"])
+        return req.view.render("index", ["title": "Log In"])
     }
     
-    app.get("makeCredential") { req -> MakeCredentialResponse in
+    let authSessionRoutes = app.grouped(User.sessionAuthenticator())
+    
+    let protected = authSessionRoutes.grouped(User.redirectMiddleware(path: "/"))
+    
+    protected.get("private") { req -> View in
+        let user = try req.auth.require(User.self)
+        return try await req.view.render("private", ["username": user.username, "title": "Private Area"])
+    }
+    
+    protected.post("logout") { req -> Response in
+        req.session.destroy()
+        return req.redirect(to: "/")
+    }
+    
+    authSessionRoutes.get("makeCredential") { req -> MakeCredentialResponse in
         let username = try req.query.get(String.self, at: "username")
         let userID = UUID()
         let challenge = [UInt8].random(count: 32).base64
@@ -23,7 +37,7 @@ func routes(_ app: Application) throws {
     }
     
     // step 2 for registration
-    app.post("makeCredential") { req -> HTTPStatus in
+    authSessionRoutes.post("makeCredential") { req -> HTTPStatus in
         guard let challenge = req.session.data["challenge"] else {
             throw Abort(.unauthorized)
         }
@@ -110,16 +124,18 @@ func routes(_ app: Application) throws {
         let credential = WebAuthnCredential(id: credentialID, publicKey: key.pemRepresentation, userID: userID)
         try await credential.save(on: req.db)
         
+        req.auth.login(user)
+        
         return .ok
     }
     
     // step 1 for authentication
-    app.get("authentication_initialize") { req -> HTTPStatus in
+    authSessionRoutes.get("authentication_initialize") { req -> HTTPStatus in
         return .notImplemented
     }
     
     // step 2 for authentication
-    app.post("authentication_finalize") { req -> HTTPStatus in
+    authSessionRoutes.post("authentication_finalize") { req -> HTTPStatus in
         return .notImplemented
     }
     
