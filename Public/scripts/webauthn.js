@@ -147,27 +147,29 @@ async function verifyAssertion(assertedCredential) {
     let rawId = new Uint8Array(assertedCredential.rawId);
     let sig = new Uint8Array(assertedCredential.response.signature);
     let userHandle = new Uint8Array(assertedCredential.response.userHandle);
-    // $.ajax({
-    //     url: '/assertion',
-    //     type: 'POST',
-    //     data: JSON.stringify({
-    //         id: assertedCredential.id,
-    //         rawId: bufferEncode(rawId),
-    //         type: assertedCredential.type,
-    //         response: {
-    //             authenticatorData: bufferEncode(authData),
-    //             clientDataJSON: bufferEncode(clientDataJSON),
-    //             signature: bufferEncode(sig),
-    //             userHandle: bufferEncode(userHandle),
-    //         },
-    //     }),
-    //     contentType: "application/json; charset=utf-8",
-    //     dataType: "json",
-    //     success: function (response) {
-    //         window.location = "/dashboard"
-    //         console.log(response)
-    //     }
-    // });
+
+    const authenticateResponse = await fetch('/authenticate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            id: assertedCredential.id,
+            rawId: bufferEncode(rawId),
+            type: assertedCredential.type,
+            response: {
+                authenticatorData: bufferEncode(authData),
+                clientDataJSON: bufferEncode(clientDataJSON),
+                signature: bufferEncode(sig),
+                userHandle: bufferEncode(userHandle),
+            },
+        })
+    });
+
+    if (!authenticateResponse.ok) {
+        throw new Error(`HTTP error: ${authenticateResponse.status}`);
+    }
+    window.location = '/private';
 }
 
 function bufferDecode(value) {
