@@ -1,7 +1,7 @@
 import Foundation
 
 public struct RegisterWebAuthnCredentialData: Codable {
-    let id: String
+    public let id: String
     let rawID: String
     let type: String
     let response: RegisterCredentialsResponse

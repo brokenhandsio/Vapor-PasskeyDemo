@@ -101,9 +101,7 @@ public enum WebAuthn {
         let key = try P256.Signing.PublicKey(rawRepresentation: xCoordinateBytes + yCoordinateBytes)
         logger.debug("Key is \(key.pemRepresentation)")
         
-        let credentialID = Data(credentialsData.credentialID).base64EncodedString()
-        
-        return Credential(credentialID: credentialID, publicKey: key)
+        return Credential(credentialID: data.id, publicKey: key)
     }
     
     static func parseAttestedData(_ data: [UInt8], logger: Logger) throws -> AttestedCredentialData {
