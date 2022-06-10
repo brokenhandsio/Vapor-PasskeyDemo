@@ -21,6 +21,4 @@ public func configure(_ app: Application) throws {
     try routes(app)
     
     try app.autoMigrate().wait()
-    
-    app.http.server.configuration.port = 8001
 }
