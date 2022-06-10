@@ -31,7 +31,6 @@ async function makeCredential() {
         return;
     }
     setUser();
-    var credential = null;
 
     const makeCredentialsResponse = await fetch('/makeCredential?username=' + state.user.name);
     console.log(makeCredentialsResponse);
@@ -116,90 +115,60 @@ async function getAssertion() {
         return;
     }
     setUser();
-    fetch('/user/' + state.user.name + '/exists')
-        .then(response => response.json())
-        .then(data => console.log(data));
-    // .done(function (response) {
-    //         console.log(response);
-    //     }).then(function () {
-            
-    //         var user_verification = $('#select-verification').find(':selected').val();            
-    //         var txAuthSimple_extension = $('#extension-input').val();
 
-    //         $.get('/assertion/' + state.user.name, {
-    //             userVer: user_verification,
-    //             txAuthExtension: txAuthSimple_extension
-    //         }, null, 'json')
-    //             .done(function (makeAssertionOptions) {
-    //                 console.log("Assertion Options:");
-    //                 console.log(makeAssertionOptions);
-    //                 makeAssertionOptions.publicKey.challenge = bufferDecode(makeAssertionOptions.publicKey.challenge);
-    //                 makeAssertionOptions.publicKey.allowCredentials.forEach(function (listItem) {
-    //                     listItem.id = bufferDecode(listItem.id)
-    //                 });
-    //                 console.log(makeAssertionOptions);
-    //                 navigator.credentials.get({
-    //                         publicKey: makeAssertionOptions.publicKey
-    //                     })
-    //                     .then(function (credential) {
-    //                         console.log(credential);
-    //                         verifyAssertion(credential);
-    //                     }).catch(function (err) {
-    //                         console.log(err.name);
-    //                         showErrorAlert(err.message);
-    //                     });
-    //             });
-    //     })
-    //     .catch(function (error) {
-    //         if (!error.exists) {
-    //             showErrorAlert("User not found, try registering one first!");
-    //         }
-    //         return;
-    //     });
+    try {
+        const authenticateResponse = await fetch('/authenticate?username=' + state.user.name);
+        console.log(authenticateResponse);
+
+        if (!authenticateResponse.ok) {
+            throw new Error(`HTTP error: ${authenticateResponse.status}`);
+        }
+        
+        const authenticateJson = await authenticateResponse.json();
+        console.log(authenticateJson);
+
+        const publicKeyCredentialRequestOptions = {
+            challenge: bufferDecode(authenticateJson.challenge),
+        }
+        const credential = await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
+        console.log(credential);
+        verifyAssertion(credential);
+    } catch(error) {
+        console.log(error);
+        showErrorAlert(error.message);
+    }
 }
 
-
-// function getAssertion() {
-//     if (!PublicKeyCredential.isConditionalMediationAvailable ||
-//         !PublicKeyCredential.isConditionalMediationAvailable()) {
-//         // Browser doesn't support AutoFill-assisted requests.
-//         alert("Unsupported")
-//         return;
-//     }
-
-//     const options = {
-//         "publicKey": {
-//             challenge: "… // Fetched from server"
-//         },
-//         mediation: "conditional"
-//     };
-
-//     navigator.credentials.get(options)
-//         .then(assertion => { 
-//             // Pass the assertion to your server.
-//         });
-// }
-
-// const publicKeyCredentialCreationOptions = {
-//     challenge: Uint8Array.from(
-//         randomStringFromServer, c => c.charCodeAt(0)),
-//     rp: {
-//         name: "Vapor",
-//         id: "vapor.codes",
-//     },
-//     user: {
-//         id: Uint8Array.from(
-//             "UZSL85T9AFC", c => c.charCodeAt(0)),
-//         name: "lee@webauthn.guide",
-//         displayName: "Lee",
-//     },
-//     pubKeyCredParams: [{alg: -7, type: "public-key"}],
-//     authenticatorSelection: {
-//         authenticatorAttachment: "cross-platform",
-//     },
-//     timeout: 60000,
-//     attestation: "direct"
-// };
+async function verifyAssertion(assertedCredential) {
+    // Move data into Arrays incase it is super long
+    console.log('calling verify')
+    let authData = new Uint8Array(assertedCredential.response.authenticatorData);
+    let clientDataJSON = new Uint8Array(assertedCredential.response.clientDataJSON);
+    let rawId = new Uint8Array(assertedCredential.rawId);
+    let sig = new Uint8Array(assertedCredential.response.signature);
+    let userHandle = new Uint8Array(assertedCredential.response.userHandle);
+    // $.ajax({
+    //     url: '/assertion',
+    //     type: 'POST',
+    //     data: JSON.stringify({
+    //         id: assertedCredential.id,
+    //         rawId: bufferEncode(rawId),
+    //         type: assertedCredential.type,
+    //         response: {
+    //             authenticatorData: bufferEncode(authData),
+    //             clientDataJSON: bufferEncode(clientDataJSON),
+    //             signature: bufferEncode(sig),
+    //             userHandle: bufferEncode(userHandle),
+    //         },
+    //     }),
+    //     contentType: "application/json; charset=utf-8",
+    //     dataType: "json",
+    //     success: function (response) {
+    //         window.location = "/dashboard"
+    //         console.log(response)
+    //     }
+    // });
+}
 
 function bufferDecode(value) {
     return Uint8Array.from(atob(value), c => c.charCodeAt(0));

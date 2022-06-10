@@ -130,12 +130,23 @@ func routes(_ app: Application) throws {
     }
     
     // step 1 for authentication
-    authSessionRoutes.get("authentication_initialize") { req -> HTTPStatus in
-        return .notImplemented
+    authSessionRoutes.get("authenticate") { req -> StartAuthenticateResponse in
+        let username = try req.query.get(String.self, at: "username")
+        guard let user = try await User.query(on: req.db).filter(\.$username == username).first() else {
+            throw Abort(.unauthorized)
+        }
+        let challenge = [UInt8].random(count: 32).base64
+        let encodedChallenge = challenge.replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        req.logger.debug("Authenticate Challenge is \(encodedChallenge)")
+        req.session.data["challenge"] = encodedChallenge
+        req.session.data["userID"] = try user.requireID().uuidString
+        return StartAuthenticateResponse(challenge: challenge)
     }
     
     // step 2 for authentication
-    authSessionRoutes.post("authentication_finalize") { req -> HTTPStatus in
+    authSessionRoutes.post("authenticate") { req -> HTTPStatus in
         return .notImplemented
     }
     
@@ -249,6 +260,10 @@ struct AuthenticatorFlags {
 
 struct MakeCredentialResponse: Content {
     let userID: String
+    let challenge: String
+}
+
+struct StartAuthenticateResponse: Content {
     let challenge: String
 }
 

@@ -14,8 +14,8 @@
           <input type="username" class="form-control" id="username" placeholder="username" autocomplete="username webauthn">
           <label for="username">Username</label>
         </div>
-        <button class="w-100 mt-3 btn btn-lg btn-primary" type="submit" onclick="getAssertion()">Sign in</button>
       </form>
+      <button class="w-100 btn btn-lg btn-primary" type="submit" onclick="getAssertion()">Sign in</button>
 
       <div class="w-100 m-auto mt-3">
         <h6>
