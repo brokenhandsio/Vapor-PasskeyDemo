@@ -2,6 +2,8 @@
 
 Proof of concept app for trying to integrate passkeys and WebAuthn into Vapor
 
+![Screenshot of app](/images/demo.png)
+
 ## Usage
 
 Clone the project, then in Terminal run
