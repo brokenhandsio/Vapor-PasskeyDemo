@@ -159,28 +159,33 @@ async function verifyAssertion(assertedCredential) {
     let sig = new Uint8Array(assertedCredential.response.signature);
     let userHandle = new Uint8Array(assertedCredential.response.userHandle);
 
-    const authenticateResponse = await fetch('/authenticate', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            id: assertedCredential.id,
-            rawId: bufferEncode(rawId),
-            type: assertedCredential.type,
-            response: {
-                authenticatorData: bufferEncode(authData),
-                clientDataJSON: bufferEncode(clientDataJSON),
-                signature: bufferEncode(sig),
-                userHandle: bufferEncode(userHandle),
+    try {
+        const authenticateResponse = await fetch('/authenticate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             },
-        })
-    });
-
-    if (!authenticateResponse.ok) {
-        throw new Error(`HTTP error: ${authenticateResponse.status}`);
+            body: JSON.stringify({
+                id: assertedCredential.id,
+                rawId: bufferEncode(rawId),
+                type: assertedCredential.type,
+                response: {
+                    authenticatorData: bufferEncode(authData),
+                    clientDataJSON: bufferEncode(clientDataJSON),
+                    signature: bufferEncode(sig),
+                    userHandle: bufferEncode(userHandle),
+                },
+            })
+        });
+    
+        if (!authenticateResponse.ok) {
+            throw new Error(`HTTP error: ${authenticateResponse.status}`);
+        }
+        window.location = '/private';
+    } catch(error) {
+        console.log(error);
+        showErrorAlert(error.message);
     }
-    window.location = '/private';
 }
 
 function bufferDecode(value) {
