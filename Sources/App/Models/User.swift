@@ -12,7 +12,8 @@ final class User: Model, Content {
     
     init() {}
     
-    init(username: String) {
+    init(id: UUID? = nil, username: String) {
+        self.id = id
         self.username = username
     }
 }

@@ -13,9 +13,12 @@ public func configure(_ app: Application) throws {
     app.databases.use(.sqlite(.file("db.sqlite")), as: .sqlite)
 
     app.migrations.add(CreateUser())
+    app.migrations.add(CreateWebAuthnCredential())
 
     app.views.use(.leaf)
     
     // register routes
     try routes(app)
+    
+    try app.autoMigrate().wait()
 }

@@ -1,6 +1,7 @@
 import Fluent
 import Vapor
 import SwiftCBOR
+import Crypto
 
 func routes(_ app: Application) throws {
     app.get { req in
@@ -94,8 +95,20 @@ func routes(_ app: Application) throws {
         req.logger.debug("Key type was \(keyType)")
         req.logger.debug("Algorithm was \(algorithm)")
         req.logger.debug("Curve was \(curve)")
-        req.logger.debug("x-coordinate was \(xCoordinateBytes)")
-        req.logger.debug("y-coordinate was \(yCoordinateBytes)")
+        
+        let key = try P256.Signing.PublicKey(rawRepresentation: xCoordinateBytes + yCoordinateBytes)
+        req.logger.debug("Key is \(key.pemRepresentation)")
+        
+        guard let username = req.session.data["username"], let userIDString = req.session.data["userID"], let userID = UUID(uuidString: userIDString) else {
+            throw Abort(.badRequest)
+        }
+        
+        let user = User(id: userID, username: username)
+        try await user.save(on: req.db)
+        
+        let credentialID = Data(credentialsData.credentialID).base64EncodedString()
+        let credential = WebAuthnCredential(id: credentialID, publicKey: key.pemRepresentation, userID: userID)
+        try await credential.save(on: req.db)
         
         return .ok
     }
@@ -123,13 +136,6 @@ func routes(_ app: Application) throws {
         
         let credentialID = data[55..<credentialIDEndIndex]
         let publicKeyBytes = data[credentialIDEndIndex...]
-        guard let publicKeyObject = try CBOR.decode(Array(publicKeyBytes)) else {
-            throw Abort(.badRequest)
-        }
-        logger.debug("Credential ID is \(credentialID)")
-        logger.debug("Public Key Object is \(publicKeyObject)")
-        
-        #warning("Finish")
         
         return AttestedCredentialData(aaguid: Array(aaguid), credentialID: Array(credentialID), publicKey: Array(publicKeyBytes))
     }
