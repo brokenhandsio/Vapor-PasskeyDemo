@@ -17,14 +17,20 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "WebAuthn",
+            dependencies: [
+                "SwiftCBOR",
+                .product(name: "Crypto", package: "swift-crypto"),
+            ]
+        ),
+        .target(
             name: "App",
             dependencies: [
                 .product(name: "Fluent", package: "fluent"),
                 .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
                 .product(name: "Leaf", package: "leaf"),
                 .product(name: "Vapor", package: "vapor"),
-                "SwiftCBOR",
-                .product(name: "Crypto", package: "swift-crypto"),
+                "WebAuthn",
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of

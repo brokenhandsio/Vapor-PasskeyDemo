@@ -127,8 +127,19 @@ async function getAssertion() {
         const authenticateJson = await authenticateResponse.json();
         console.log(authenticateJson);
 
+        var allowedCredentials = [];
+
+        authenticateJson.credentials.forEach(credential => {
+            const credentialInfo = {
+                id: bufferDecode(credential.id),
+                type: 'public-key',
+            }
+            allowedCredentials.push(credentialInfo);
+        });
+
         const publicKeyCredentialRequestOptions = {
             challenge: bufferDecode(authenticateJson.challenge),
+            allowCredentials: allowedCredentials,
         }
         const credential = await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
         console.log(credential);

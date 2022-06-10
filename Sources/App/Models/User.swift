@@ -10,6 +10,9 @@ final class User: Model, Content {
     @Field(key: "username")
     var username: String
     
+    @Children(for: \.$user)
+    var credentials: [WebAuthnCredential]
+    
     init() {}
     
     init(id: UUID? = nil, username: String) {
