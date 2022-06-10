@@ -91,6 +91,7 @@ func routes(_ app: Application) throws {
         }
         let publicKey = try P256.Signing.PublicKey(pemRepresentation: credential.publicKey)
         try WebAuthn.validateAssertion(data, challengeProvided: challenge, publicKey: publicKey, logger: req.logger)
+        req.auth.login(credential.user)
         return .ok
     }
 }

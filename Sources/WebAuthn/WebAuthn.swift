@@ -23,10 +23,14 @@ public enum WebAuthn {
         }
         let signedData = authenticatorData + clientDataJSONHash
         
-        guard let signatureData = Data(base64Encoded: data.response.signature) else {
+        var base64SignatureString = data.response.signature.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while base64SignatureString.count % 4 != 0 {
+            base64SignatureString = base64SignatureString.appending("=")
+        }
+        guard let signatureData = Data(base64Encoded: base64SignatureString) else {
             throw WebAuthnError.badRequestData
         }
-        let signature = try P256.Signing.ECDSASignature(rawRepresentation: signatureData)
+        let signature = try P256.Signing.ECDSASignature(derRepresentation: signatureData)
         guard publicKey.isValidSignature(signature, for: signedData) else {
             throw WebAuthnError.validationError
         }
