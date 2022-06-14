@@ -55,8 +55,8 @@ func routes(_ app: Application) throws {
         let user = User(id: userID, username: username)
         try await user.save(on: req.db)
         
-        let credential = WebAuthnCredential(id: credential.credentialID, publicKey: credential.publicKey.pemRepresentation, userID: userID)
-        try await credential.save(on: req.db)
+        let webAuthnCredential = WebAuthnCredential(id: credential.credentialID, publicKey: credential.publicKey.pemRepresentation, userID: userID)
+        try await webAuthnCredential.save(on: req.db)
         
         req.auth.login(user)
         
@@ -76,7 +76,7 @@ func routes(_ app: Application) throws {
         req.logger.debug("Authenticate Challenge is \(encodedChallenge)")
         req.session.data["challenge"] = encodedChallenge
         req.session.data["userID"] = try user.requireID().uuidString
-        let credentials = try await user.$credentials.get(on: req.db).map {
+        let credentials: [WebAuthnCredential] = try await user.$credentials.get(on: req.db).map {
             // We need to convert the IDs to base64 encoded from base64 URL encoded
             var id = $0.id!.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
             while id.count % 4 != 0 {
