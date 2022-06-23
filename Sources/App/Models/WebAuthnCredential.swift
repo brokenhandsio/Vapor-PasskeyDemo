@@ -13,6 +13,13 @@ final class WebAuthnCredential: Model, Content {
     @Parent(key: "user_id")
     var user: User
     
+    // TODO
+    // Add signature count
+    // Add attenstation
+    // authenticatorMetadata?
+    // lastAccessTime?
+    // creationDate?
+    
     init() {}
     
     init(id: String, publicKey: String, userID: UUID) {
