@@ -8,7 +8,7 @@ func routes(_ app: Application) throws {
     }
     
     app.get(".well-known", "apple-app-site-association") { req -> Response in
-        let appIdentifier = "io.brokenhands.apple-samplecode.Shiny"
+        let appIdentifier = "YWLW23LT6G.io.brokenhands.demos.auth.Shiny"
         let responseString =
             """
             {
