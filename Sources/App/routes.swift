@@ -7,6 +7,34 @@ func routes(_ app: Application) throws {
         return req.view.render("index", ["title": "Log In"])
     }
     
+    app.get(".well-known", "apple-app-site-association") { req -> Response in
+        let appIdentifier = "io.brokenhands.apple-samplecode.Shiny"
+        let responseString =
+            """
+            {
+                "applinks": {
+                    "details": [
+                        {
+                            "appIDs": [
+                                "\(appIdentifier)"
+                            ],
+                            "components": [
+                            ]
+                        }
+                    ]
+                },
+                "webcredentials": {
+                    "apps": [
+                        "\(appIdentifier)"
+                    ]
+                }
+            }
+            """
+        let response = try await responseString.encodeResponse(for: req)
+        response.headers.contentType = HTTPMediaType(type: "application", subType: "json")
+        return response
+    }
+    
     let authSessionRoutes = app.grouped(User.sessionAuthenticator())
     
     let protected = authSessionRoutes.grouped(User.redirectMiddleware(path: "/"))
