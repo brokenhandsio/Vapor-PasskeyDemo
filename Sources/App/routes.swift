@@ -83,8 +83,8 @@ func routes(_ app: Application) throws {
         let user = User(id: userID, username: username)
         try await user.save(on: req.db)
         
-        let createdCredential = WebAuthnCredential(id: credential.credentialID, publicKey: credential.publicKey.pemRepresentation, userID: userID)
-        try await createdCredential.save(on: req.db)
+        let webAuthnCredential = WebAuthnCredential(id: credential.credentialID, publicKey: credential.publicKey.pemRepresentation, userID: userID)
+        try await webAuthnCredential.save(on: req.db)
         
         req.auth.login(user)
         
