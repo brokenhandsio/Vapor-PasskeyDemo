@@ -4,18 +4,18 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug Run",
-            "program": ".build/debug/Run",
+            "program": "${workspaceFolder:Vapor-PasskeyDemo}/.build/debug/Run",
             "args": [],
-            "cwd": "${workspaceFolder:PasskeyDemo}",
+            "cwd": "${workspaceFolder:Vapor-PasskeyDemo}",
             "preLaunchTask": "swift: Build Debug Run"
         },
         {
             "type": "lldb",
             "request": "launch",
             "name": "Release Run",
-            "program": ".build/release/Run",
+            "program": "${workspaceFolder:Vapor-PasskeyDemo}/.build/release/Run",
             "args": [],
-            "cwd": "${workspaceFolder:PasskeyDemo}",
+            "cwd": "${workspaceFolder:Vapor-PasskeyDemo}",
             "preLaunchTask": "swift: Build Release Run"
         }
     ]

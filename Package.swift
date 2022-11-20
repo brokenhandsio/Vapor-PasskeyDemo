@@ -7,24 +7,13 @@ let package = Package(
        .macOS(.v12)
     ],
     dependencies: [
-        // 💧 A server-side Swift web framework.
         .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
         .package(url: "https://github.com/vapor/fluent.git", from: "4.0.0"),
         .package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"),
         .package(url: "https://github.com/vapor/leaf.git", from: "4.0.0"),
-        .package(url: "https://github.com/unrelentingtech/SwiftCBOR.git", from: "0.4.5"),
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "2.0.0"),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+        .package(url: "https://github.com/swift-server/webauthn-swift.git", branch: "main")
     ],
     targets: [
-        .target(
-            name: "WebAuthn",
-            dependencies: [
-                "SwiftCBOR",
-                .product(name: "Crypto", package: "swift-crypto"),
-                .product(name: "Logging", package: "swift-log"),
-            ]
-        ),
         .target(
             name: "App",
             dependencies: [
@@ -32,7 +21,7 @@ let package = Package(
                 .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
                 .product(name: "Leaf", package: "leaf"),
                 .product(name: "Vapor", package: "vapor"),
-                "WebAuthn",
+                .product(name: "WebAuthn", package: "webauthn-swift")
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of

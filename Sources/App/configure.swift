@@ -16,9 +16,9 @@ public func configure(_ app: Application) throws {
     app.migrations.add(CreateWebAuthnCredential())
 
     app.views.use(.leaf)
-    
+
     // register routes
     try routes(app)
-    
+
     try app.autoMigrate().wait()
 }
