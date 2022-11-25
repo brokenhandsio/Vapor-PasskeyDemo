@@ -2,6 +2,7 @@ import Fluent
 import FluentSQLiteDriver
 import Leaf
 import Vapor
+import WebAuthn
 
 // configures your application
 public func configure(_ app: Application) throws {
@@ -16,6 +17,8 @@ public func configure(_ app: Application) throws {
     app.migrations.add(CreateWebAuthnCredential())
 
     app.views.use(.leaf)
+
+    WebAuthn.config = WebAuthn.Config(relyingPartyDisplayName: "My Vapor Web App", relyingPartyID: "1")
 
     // register routes
     try routes(app)
