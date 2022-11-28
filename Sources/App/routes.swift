@@ -51,9 +51,11 @@ func routes(_ app: Application) throws {
 
     authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
         let username = try req.query.get(String.self, at: "username")
-        // Technically we also need to check if we have an existing user using legacy sign-in methods
-        let user = WebAuthn.User(id: UUID().uuidString.base64String(), name: username, displayName: username)
-        let (options, sessionData) = try WebAuthnManager.beginRegistration(user: user)
+
+        let user = User(username: username)
+        try await user.save(on: req.db)
+
+        let (options, sessionData) = try req.webAuthn.beginRegistration(user: user)
 
         req.logger.debug("Challenge is \(options.challenge)")
 
@@ -74,14 +76,13 @@ func routes(_ app: Application) throws {
             throw Abort(.internalServerError)
         }
 
-        let credential = try WebAuthnManager.parseRegisterCredentials(registerData, challengeProvided: challenge, origin: origin, logger: req.logger)
+        let credential = try req.webAuthn.parseRegisterCredentials(registerData, challengeProvided: challenge, origin: origin, logger: req.logger)
 
-        guard let username = req.session.data["username"], let userIDString = req.session.data["userID"], let userID = UUID(uuidString: userIDString) else {
+        guard let userIDString = req.session.data["userID"],
+            let userID = UUID(uuidString: userIDString),
+            let user = try await User.find(userID, on: req.db) else {
             throw Abort(.badRequest)
         }
-
-        let user = User(id: userID, username: username)
-        try await user.save(on: req.db)
 
         let webAuthnCredential = WebAuthnCredential(id: credential.credentialID, publicKey: credential.publicKey.pemRepresentation, userID: userID)
         try await webAuthnCredential.save(on: req.db)
@@ -97,7 +98,7 @@ func routes(_ app: Application) throws {
         guard let user = try await User.query(on: req.db).filter(\.$username == username).first() else {
             throw Abort(.unauthorized)
         }
-        let challenge = try WebAuthnManager.generateChallenge()
+        let challenge = try req.webAuthn.generateChallenge()
         let encodedChallenge = challenge.base64URLEncodedString()
         req.logger.debug("Authenticate Challenge is \(encodedChallenge)")
         req.session.data["challenge"] = encodedChallenge
@@ -123,7 +124,7 @@ func routes(_ app: Application) throws {
             throw Abort(.unauthorized)
         }
         let publicKey = try P256.Signing.PublicKey(pemRepresentation: credential.publicKey)
-        try WebAuthnManager.verifyAuthenticationResponse(
+        try req.webAuthn.verifyAuthenticationResponse(
             data,
             expectedChallenge: challenge,
             publicKey: publicKey,

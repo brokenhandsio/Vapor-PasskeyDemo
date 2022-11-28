@@ -17,8 +17,9 @@ public func configure(_ app: Application) throws {
     app.migrations.add(CreateWebAuthnCredential())
 
     app.views.use(.leaf)
-
-    WebAuthn.config = WebAuthn.Config(relyingPartyDisplayName: "My Vapor Web App", relyingPartyID: "1")
+    app.webAuthn = WebAuthnManager(
+        config: WebAuthnConfig(relyingPartyDisplayName: "My Vapor Web App", relyingPartyID: "1", timeout: 60)
+    )
 
     // register routes
     try routes(app)
