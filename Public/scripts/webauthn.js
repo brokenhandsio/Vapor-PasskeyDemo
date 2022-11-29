@@ -38,7 +38,7 @@ async function makeCredential() {
     console.log(makeCredentialsResponseJson);
 
     const challenge = bufferDecode(makeCredentialsResponseJson.challenge);
-    const userId = bufferDecode(makeCredentialsResponseJson.userID)
+    const userId = bufferDecode(makeCredentialsResponseJson.user.id)
 
     var publicKey = {
         challenge: challenge,
@@ -123,7 +123,7 @@ async function getAssertion() {
         if (!authenticateResponse.ok) {
             throw new Error(`HTTP error: ${authenticateResponse.status}`);
         }
-        
+
         const authenticateJson = await authenticateResponse.json();
         console.log(authenticateJson);
 
@@ -177,7 +177,7 @@ async function verifyAssertion(assertedCredential) {
                 },
             })
         });
-    
+
         if (!authenticateResponse.ok) {
             throw new Error(`HTTP error: ${authenticateResponse.status}`);
         }
