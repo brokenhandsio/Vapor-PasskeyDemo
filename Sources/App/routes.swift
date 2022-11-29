@@ -98,7 +98,7 @@ func routes(_ app: Application) throws {
         guard let user = try await User.query(on: req.db).filter(\.$username == username).first() else {
             throw Abort(.unauthorized)
         }
-        let challenge = try req.webAuthn.generateChallenge()
+        let challenge = try req.webAuthn.generateChallengeString()
         let encodedChallenge = challenge.base64URLEncodedString()
         req.logger.debug("Authenticate Challenge is \(encodedChallenge)")
         req.session.data["challenge"] = encodedChallenge
