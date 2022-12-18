@@ -18,7 +18,12 @@ public func configure(_ app: Application) throws {
 
     app.views.use(.leaf)
     app.webAuthn = WebAuthnManager(
-        config: WebAuthnConfig(relyingPartyDisplayName: "My Vapor Web App", relyingPartyID: "1", timeout: 60)
+        config: WebAuthnConfig(
+            relyingPartyDisplayName: "My Vapor Web App",
+            relyingPartyID: "localhost",
+            relyingPartyOrigin: "http://localhost:8080",
+            timeout: 60
+        )
     )
 
     // register routes

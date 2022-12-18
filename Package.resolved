@@ -253,15 +253,6 @@
       }
     },
     {
-      "identity" : "webauthn-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-server/webauthn-swift.git",
-      "state" : {
-        "branch" : "refactor",
-        "revision" : "46bb8e2c0af406d008394ef31303743ef9834736"
-      }
-    },
-    {
       "identity" : "websocket-kit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/websocket-kit.git",

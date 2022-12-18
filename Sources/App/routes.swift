@@ -49,47 +49,45 @@ func routes(_ app: Application) throws {
         return req.redirect(to: "/")
     }
 
-    authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
+    authSessionRoutes.get("signup", use: { req -> Response in
         let username = try req.query.get(String.self, at: "username")
-
         let user = User(username: username)
         try await user.save(on: req.db)
+        req.auth.login(user)
+        return req.redirect(to: "makeCredential")
+    })
 
-        let (options, sessionData) = try req.webAuthn.beginRegistration(user: user)
-
-        req.logger.debug("Challenge is \(options.challenge)")
-
-        req.session.data["challenge"] = sessionData.challenge
-        req.session.data["userID"] = sessionData.userID
-
+    authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
+        let user = try req.auth.require(User.self)
+        let options = try req.webAuthn.beginRegistration(user: user)
+        req.session.data["challenge"] = options.challenge
         return options
     }
 
     // step 2 for registration
     authSessionRoutes.post("makeCredential") { req -> HTTPStatus in
-        guard let challenge = req.session.data["challenge"] else {
-            throw Abort(.unauthorized)
+        let user = try req.auth.require(User.self)
+        guard let challenge = req.session.data["challenge"] else { throw Abort(.unauthorized) }
+
+        do {
+            let credential = try await req.webAuthn.finishRegistration(
+                challenge: challenge,
+                credentialCreationData: req.content.decode(CredentialCreationResponse.self),
+                confirmCredentialIDNotRegisteredYet: { credentialID in
+                    let existingCredential = try await WebAuthnCredential.query(on: req.db)
+                        .filter(\.$id == credentialID)
+                        .first()
+                    return existingCredential == nil
+                }
+            )
+
+            try await WebAuthnCredential(from: credential, userID: user.requireID()).save(on: req.db)
+        } catch {
+            req.logger.debug("\(error)")
+            throw error
         }
-        let registerData = try req.content.decode(RegistrationResponse.self)
 
-        guard let origin = Environment.get("ORIGIN") else {
-            throw Abort(.internalServerError)
-        }
-
-        let credential = try req.webAuthn.parseRegisterCredentials(registerData, challengeProvided: challenge, origin: origin, logger: req.logger)
-
-        guard let userIDString = req.session.data["userID"],
-            let userID = UUID(uuidString: userIDString),
-            let user = try await User.find(userID, on: req.db) else {
-            throw Abort(.badRequest)
-        }
-
-        let webAuthnCredential = WebAuthnCredential(id: credential.credentialID, publicKey: credential.publicKey.pemRepresentation, userID: userID)
-        try await webAuthnCredential.save(on: req.db)
-
-        req.auth.login(user)
-
-        return .ok
+        return .noContent
     }
 
     // step 1 for authentication
@@ -123,18 +121,18 @@ func routes(_ app: Application) throws {
         guard let credential = try await WebAuthnCredential.query(on: req.db).filter(\.$id == data.id).with(\.$user).first(), credential.$user.id == userID else {
             throw Abort(.unauthorized)
         }
-        let publicKey = try P256.Signing.PublicKey(pemRepresentation: credential.publicKey)
-        try req.webAuthn.verifyAuthenticationResponse(
-            data,
-            expectedChallenge: challenge,
-            publicKey: publicKey,
-            logger: req.logger
-        )
+        // let publicKey = try P256.Signing.PublicKey(rawRepresentation: credential.publicKey)
+        // try req.webAuthn.validateAssertion(
+        //     data,
+        //     challengeProvided: challenge,
+        //     publicKey: publicKey,
+        //     logger: req.logger
+        // )
         req.auth.login(credential.user)
         return .ok
     }
 }
 
-extension RegistrationResponse: Content {}
+extension CredentialCreationResponse: Content {}
 extension AuthenticationResponse: Content {}
 extension PublicKeyCredentialCreationOptions: Content {}

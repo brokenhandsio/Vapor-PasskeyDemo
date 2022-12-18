@@ -32,7 +32,7 @@ async function makeCredential() {
     }
     setUser();
 
-    const makeCredentialsResponse = await fetch('/makeCredential?username=' + state.user.name);
+    const makeCredentialsResponse = await fetch('/signup?username=' + state.user.name);
     console.log(makeCredentialsResponse);
     const makeCredentialsResponseJson = await makeCredentialsResponse.json();
     console.log(makeCredentialsResponseJson);
