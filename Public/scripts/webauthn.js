@@ -12,12 +12,13 @@ var state = {
     publicKeyCredential: null,
     credential: null,
     user: {
-        name: "testuser@example.com",
-        displayName: "testuser",
+        name: "",
+        displayName: "",
     },
 }
 
 function setUser() {
+    if (document.getElementById("username").value === "") return;
     username = document.getElementById("username").value;
     state.user.name = username.toLowerCase().replace(/\s/g, '');
     state.user.displayName = username.toLowerCase();
@@ -32,8 +33,12 @@ async function makeCredential() {
     }
     setUser();
 
-    const makeCredentialsResponse = await fetch('/makeCredential?username=' + state.user.name);
+    const makeCredentialsResponse = await fetch('/signup?username=' + state.user.name);
     console.log(makeCredentialsResponse);
+    if (makeCredentialsResponse.status !== 200) {
+        showErrorAlert("Username is already taken");
+        return;
+    }
     const makeCredentialsResponseJson = await makeCredentialsResponse.json();
     console.log(makeCredentialsResponseJson);
 
@@ -63,11 +68,13 @@ async function makeCredential() {
 
     try {
         const newCredential = await navigator.credentials.create({ publicKey });
-        console.log(newCredential);
+        console.log("New credential: " + newCredential);
         state.createResponse = newCredential;
         registerNewCredential(newCredential);
     } catch(error) {
-        console.log(error);
+        console.log("Creating credential failed: " + error);
+        // if something went wrong we delete the user so we can try again later with the same username
+        await fetch('/makeCredential', { method: 'DELETE' });
         showErrorAlert(error.message);
     }
 }
@@ -110,37 +117,37 @@ async function registerNewCredential(newCredential) {
 
 async function getAssertion() {
     hideErrorAlert();
-    if (document.getElementById("username").value === "") {
-        showErrorAlert("Please enter a username");
-        return;
-    }
     setUser();
 
     try {
-        const authenticateResponse = await fetch('/authenticate?username=' + state.user.name);
+        let query = '';
+        if (state.user.name != "") {
+            query += '?username=' + state.user.name;
+        }
+        const authenticateResponse = await fetch('/authenticate' + query);
         console.log(authenticateResponse);
 
         if (!authenticateResponse.ok) {
             throw new Error(`HTTP error: ${authenticateResponse.status}`);
         }
 
-        const authenticateJson = await authenticateResponse.json();
-        console.log(authenticateJson);
+        const publicKeyCredentialRequestOptions = await authenticateResponse.json();
+        console.log(publicKeyCredentialRequestOptions);
 
-        var allowedCredentials = [];
-
-        authenticateJson.credentials.forEach(credential => {
-            const credentialInfo = {
-                id: bufferDecode(credential.id),
-                type: 'public-key',
-            }
-            allowedCredentials.push(credentialInfo);
-        });
-
-        const publicKeyCredentialRequestOptions = {
-            challenge: bufferDecode(authenticateJson.challenge),
-            allowCredentials: allowedCredentials,
+        if (publicKeyCredentialRequestOptions.allowCredentials) {
+            publicKeyCredentialRequestOptions.allowCredentials = publicKeyCredentialRequestOptions.allowCredentials.map(allowedCredential => {
+                return {
+                    id: bufferDecode(allowedCredential.id),
+                    type: allowedCredential.type,
+                    transports: allowedCredential.transports
+                };
+            });
         }
+
+        publicKeyCredentialRequestOptions.challenge = bufferDecode(publicKeyCredentialRequestOptions.challenge);
+
+        console.log("publicKeyCredentialRequestOptions: ", publicKeyCredentialRequestOptions);
+
         const credential = await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
         console.log(credential);
         verifyAssertion(credential);

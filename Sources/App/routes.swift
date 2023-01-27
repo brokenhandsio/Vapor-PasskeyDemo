@@ -49,92 +49,105 @@ func routes(_ app: Application) throws {
         return req.redirect(to: "/")
     }
 
-    authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
+    authSessionRoutes.get("signup", use: { req -> Response in
         let username = try req.query.get(String.self, at: "username")
-
+        guard try await User.query(on: req.db).filter(\.$username == username).first() == nil else {
+            throw Abort(.badRequest, reason: "Username already taken.")
+        }
         let user = User(username: username)
-        try await user.save(on: req.db)
+        try await user.create(on: req.db)
+        req.auth.login(user)
+        return req.redirect(to: "makeCredential")
+    })
 
-        let (options, sessionData) = try req.webAuthn.beginRegistration(user: user)
-
-        req.logger.debug("Challenge is \(options.challenge)")
-
-        req.session.data["challenge"] = sessionData.challenge
-        req.session.data["userID"] = sessionData.userID
-
+    authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
+        let user = try req.auth.require(User.self)
+        let options = try req.webAuthn.beginRegistration(user: user)
+        req.session.data["challenge"] = options.challenge
         return options
+    }
+
+    authSessionRoutes.delete("makeCredential") { req -> HTTPStatus in
+        let user = try req.auth.require(User.self)
+        try await user.delete(on: req.db)
+        return .noContent
     }
 
     // step 2 for registration
     authSessionRoutes.post("makeCredential") { req -> HTTPStatus in
-        guard let challenge = req.session.data["challenge"] else {
-            throw Abort(.unauthorized)
+        let user = try req.auth.require(User.self)
+        guard let challenge = req.session.data["challenge"] else { throw Abort(.unauthorized) }
+
+        do {
+            let credential = try await req.webAuthn.finishRegistration(
+                challenge: challenge,
+                credentialCreationData: req.content.decode(RegistrationCredential.self),
+                confirmCredentialIDNotRegisteredYet: { credentialID in
+                    let existingCredential = try await WebAuthnCredential.query(on: req.db)
+                        .filter(\.$id == credentialID)
+                        .first()
+                    return existingCredential == nil
+                }
+            )
+
+            try await WebAuthnCredential(from: credential, userID: user.requireID()).save(on: req.db)
+        } catch {
+            req.logger.debug("\(error)")
+            throw error
         }
-        let registerData = try req.content.decode(RegistrationResponse.self)
 
-        guard let origin = Environment.get("ORIGIN") else {
-            throw Abort(.internalServerError)
-        }
-
-        let credential = try req.webAuthn.parseRegisterCredentials(registerData, challengeProvided: challenge, origin: origin, logger: req.logger)
-
-        guard let userIDString = req.session.data["userID"],
-            let userID = UUID(uuidString: userIDString),
-            let user = try await User.find(userID, on: req.db) else {
-            throw Abort(.badRequest)
-        }
-
-        let webAuthnCredential = WebAuthnCredential(id: credential.credentialID, publicKey: credential.publicKey.pemRepresentation, userID: userID)
-        try await webAuthnCredential.save(on: req.db)
-
-        req.auth.login(user)
-
-        return .ok
+        return .noContent
     }
 
     // step 1 for authentication
-    authSessionRoutes.get("authenticate") { req -> StartAuthenticateResponse in
-        let username = try req.query.get(String.self, at: "username")
-        guard let user = try await User.query(on: req.db).filter(\.$username == username).first() else {
-            throw Abort(.unauthorized)
-        }
-        let challenge = try req.webAuthn.generateChallengeString()
-        let encodedChallenge = challenge.base64URLEncodedString()
-        req.logger.debug("Authenticate Challenge is \(encodedChallenge)")
-        req.session.data["challenge"] = encodedChallenge
-        req.session.data["userID"] = try user.requireID().uuidString
-        let credentials = try await user.$credentials.get(on: req.db).map { credential -> WebAuthnCredential in
-            // We need to convert the IDs to base64 encoded from base64 URL encoded
-            var id = String.base64(fromBase64URLEncoded: credential.id!)
-            while id.count % 4 != 0 {
-                id = id.appending("=")
+    authSessionRoutes.get("authenticate") { req -> PublicKeyCredentialRequestOptions in
+        var allowCredentials: [PublicKeyCredentialDescriptor]?
+        if let username = try? req.query.get(String.self, at: "username") {
+            guard let user = try await User.query(on: req.db).filter(\.$username == username).first() else {
+                throw Abort(.badRequest, reason: "That user does not exist")
             }
-            return WebAuthnCredential(id: id, publicKey: credential.publicKey, userID: credential.$user.id)
+
+            let credentials = try await user.$credentials.get(on: req.db)
+            allowCredentials = credentials.map { credential -> PublicKeyCredentialDescriptor in
+                let idData = [UInt8](credential.id!.base64URLDecodedData!)
+                return PublicKeyCredentialDescriptor(type: "public-key", id: idData)
+            }
+            guard allowCredentials!.count > 0 else {
+                throw Abort(.badRequest, reason: "That username has no registered credentials")
+            }
         }
-        return StartAuthenticateResponse(challenge: challenge.base64String(), credentials: credentials)
+
+        let options = try req.webAuthn.beginAuthentication(timeout: nil, allowCredentials: allowCredentials)
+        req.session.data["challenge"] = String.base64URL(fromBase64: options.challenge)
+
+        return options
     }
 
     // step 2 for authentication
     authSessionRoutes.post("authenticate") { req -> HTTPStatus in
-        guard let challenge = req.session.data["challenge"], let userIDString = req.session.data["userID"], let userID = UUID(uuidString: userIDString) else {
+        guard let challenge = req.session.data["challenge"] else {
             throw Abort(.unauthorized)
         }
-        let data = try req.content.decode(AuthenticationResponse.self)
-        guard let credential = try await WebAuthnCredential.query(on: req.db).filter(\.$id == data.id).with(\.$user).first(), credential.$user.id == userID else {
+        let data = try req.content.decode(AuthenticationCredential.self)
+        guard let credential = try await WebAuthnCredential.query(on: req.db)
+            .filter(\.$id == data.id)
+            .with(\.$user)
+            .first() else {
             throw Abort(.unauthorized)
         }
-        let publicKey = try P256.Signing.PublicKey(pemRepresentation: credential.publicKey)
-        try req.webAuthn.verifyAuthenticationResponse(
-            data,
+        let verifiedAuthentication = try req.webAuthn.finishAuthentication(
+            credential: data,
             expectedChallenge: challenge,
-            publicKey: publicKey,
-            logger: req.logger
+            credentialPublicKey: [UInt8](credential.publicKey.base64URLDecodedData!),
+            credentialCurrentSignCount: 0
         )
+        req.logger.debug("verifiedAuthentication: \(verifiedAuthentication)")
         req.auth.login(credential.user)
         return .ok
     }
 }
 
-extension RegistrationResponse: Content {}
-extension AuthenticationResponse: Content {}
+extension RegistrationCredential: Content {}
+extension AuthenticationCredential: Content {}
 extension PublicKeyCredentialCreationOptions: Content {}
+extension PublicKeyCredentialRequestOptions: Content {}

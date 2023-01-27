@@ -1,27 +1,38 @@
 #extend("base"):
   #export("body"):
     <main class="form-signin w-100 m-auto">
-      <form class="mb-4">
+      <div>
+        <!-- Header -->
         <img class="mb-4" src="/images/vapor-logo.svg" alt="Vapor Logo" width="72">
         <h1 class="h3 mb-3 fw-normal">Vapor Passkey Demo</h1>
 
-        <div class="alert alert-danger d-none" id="alert" role="alert">
-          Something went wrong:
-          <div id="alert-message"></div>
+        <!-- Error message -->
+        <div class="mb-4 alert alert-warning d-none" id="alert" role="alert">
+          <h6 class="alert-heading">Something went wrong:</h6>
+          <p class="mb-0" id="alert-message"></p>
         </div>
 
-        <div class="form-floating">
-          <input type="username" class="form-control" id="username" placeholder="username" autocomplete="username webauthn">
+        <!-- Username input -->
+        <div class="form-floating mb-4">
+          <input type="username" class="form-control" id="username" placeholder="Username" autocomplete="username webauthn">
           <label for="username">Username</label>
         </div>
-      </form>
-      <button class="w-100 btn btn-lg btn-primary" type="submit" onclick="getAssertion()">Sign in</button>
 
-      <div class="w-100 m-auto mt-3">
-        <h6>
-          Don't have an account? Register now!
-        </h6>
-        <button class="w-100 btn btn-lg btn-primary" type="submit" onclick="makeCredential()">Register</button>
+        <!--  Sign in button -->
+        <div class="w-100 m-auto mt-3">
+          <p>
+            Tip: You don't have to enter a username to sign in!
+          </p>
+          <button class="w-100 btn btn-lg btn-primary mb-5" type="submit" onclick="getAssertion()">Sign in</button>
+        </div>
+
+        <!--  Register text + button -->
+        <div class="w-100 m-auto mt-3">
+          <h6>
+            Don't have an account? Register now!
+          </h6>
+          <button class="w-100 btn btn-lg btn-primary" type="submit" onclick="makeCredential()">Register</button>
+        </div>
       </div>
     </main>
   #endexport
