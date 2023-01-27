@@ -104,13 +104,16 @@ func routes(_ app: Application) throws {
         var allowCredentials: [PublicKeyCredentialDescriptor]?
         if let username = try? req.query.get(String.self, at: "username") {
             guard let user = try await User.query(on: req.db).filter(\.$username == username).first() else {
-                throw Abort(.badRequest, reason: "That username has no registered credentials")
+                throw Abort(.badRequest, reason: "That user does not exist")
             }
 
             let credentials = try await user.$credentials.get(on: req.db)
             allowCredentials = credentials.map { credential -> PublicKeyCredentialDescriptor in
                 let idData = [UInt8](credential.id!.base64URLDecodedData!)
                 return PublicKeyCredentialDescriptor(type: "public-key", id: idData)
+            }
+            guard allowCredentials!.count > 0 else {
+                throw Abort(.badRequest, reason: "That username has no registered credentials")
             }
         }
 
