@@ -22,7 +22,7 @@ final class User: Model, Content {
     }
 }
 
-extension User: WebAuthn.User {
+extension User: WebAuthnUser {
     var userID: String { id!.uuidString }
     var name: String { username }
     var displayName: String { username }

@@ -5,7 +5,7 @@
             "request": "launch",
             "name": "Debug Run",
             "program": "${workspaceFolder:Vapor-PasskeyDemo}/.build/debug/Run",
-            "args": [],
+            "args": ["serve", "--hostname", "localhost"],
             "cwd": "${workspaceFolder:Vapor-PasskeyDemo}",
             "preLaunchTask": "swift: Build Debug Run"
         },
@@ -14,7 +14,7 @@
             "request": "launch",
             "name": "Release Run",
             "program": "${workspaceFolder:Vapor-PasskeyDemo}/.build/release/Run",
-            "args": [],
+            "args": ["serve", "--hostname", "localhost"],
             "cwd": "${workspaceFolder:Vapor-PasskeyDemo}",
             "preLaunchTask": "swift: Build Release Run"
         }
