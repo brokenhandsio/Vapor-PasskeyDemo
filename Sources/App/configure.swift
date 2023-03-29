@@ -6,7 +6,6 @@ import WebAuthn
 
 // configures your application
 public func configure(_ app: Application) throws {
-    app.logger.logLevel = .debug
     // uncomment to serve files from /Public folder
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     app.middleware.use(app.sessions.middleware)
@@ -21,8 +20,7 @@ public func configure(_ app: Application) throws {
         config: WebAuthnConfig(
             relyingPartyDisplayName: "My Vapor Web App",
             relyingPartyID: "localhost",
-            relyingPartyOrigin: "http://localhost:8080",
-            timeout: 60
+            relyingPartyOrigin: "http://localhost:8080"
         )
     )
 

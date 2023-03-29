@@ -34,48 +34,27 @@ async function makeCredential() {
     setUser();
 
     const makeCredentialsResponse = await fetch('/signup?username=' + state.user.name);
-    console.log(makeCredentialsResponse);
     if (makeCredentialsResponse.status !== 200) {
         showErrorAlert("Username is already taken");
         return;
     }
-    const makeCredentialsResponseJson = await makeCredentialsResponse.json();
-    console.log(makeCredentialsResponseJson);
 
-    const challenge = bufferDecode(makeCredentialsResponseJson.challenge);
-    const userId = bufferDecode(makeCredentialsResponseJson.user.id)
+    var credentialCreationOptions = await makeCredentialsResponse.json();
+    credentialCreationOptions.challenge = bufferDecode(credentialCreationOptions.challenge);
+    credentialCreationOptions.user.id = bufferDecode(credentialCreationOptions.user.id);
 
-    var publicKey = {
-        challenge: challenge,
-        rp: {
-            name: "Vapor Demo"
-        },
-        user: {
-            id: userId,
-            name: state.user.name,
-            displayName: state.user.displayName,
-        },
-        pubKeyCredParams: [
-            {
-                type: "public-key",
-                alg: -7
-            }
-        ],
-        authenticatorSelection: {
-            userVerification: "preferred"
-        }
-    }
+    console.log(credentialCreationOptions);
 
     try {
-        const newCredential = await navigator.credentials.create({ publicKey });
-        console.log("New credential: " + newCredential);
-        state.createResponse = newCredential;
-        registerNewCredential(newCredential);
+        let registrationCredential = await navigator.credentials.create({ publicKey: credentialCreationOptions });
+        console.log("New credential: " + registrationCredential);
+        state.createResponse = registrationCredential;
+        await registerNewCredential(registrationCredential);
     } catch(error) {
-        console.log("Creating credential failed: " + error);
-        // if something went wrong we delete the user so we can try again later with the same username
+        const errorMessage = "Creating credential failed: " + error.message;
+        console.log(errorMessage);
         await fetch('/makeCredential', { method: 'DELETE' });
-        showErrorAlert(error.message);
+        showErrorAlert(errorMessage);
     }
 }
 
