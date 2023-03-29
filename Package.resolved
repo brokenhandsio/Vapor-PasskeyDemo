@@ -275,8 +275,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-server/webauthn-swift.git",
       "state" : {
-        "branch" : "marius",
-        "revision" : "2f5c9be00baa4a308a7121c53e4015ee8867af62"
+        "branch" : "main",
+        "revision" : "d92d409214e2409f8219817e27fb02646087b72f"
       }
     },
     {
