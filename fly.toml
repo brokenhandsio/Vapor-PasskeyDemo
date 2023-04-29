@@ -1,0 +1,17 @@
+# fly.toml app configuration file generated for passkey-demo-demo on 2023-04-29T15:18:10+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "passkey-demo-demo"
+primary_region = "lhr"
+
+[mounts]
+  source = "sqlite_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
