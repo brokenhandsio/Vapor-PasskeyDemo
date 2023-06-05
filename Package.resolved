@@ -158,8 +158,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-certificates.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "9b2f1c6797519544c57a382706a519f6128e10dd"
+        "revision" : "678756a6590c8fc30ab85a01442152bab9b83928",
+        "version" : "0.3.0"
       }
     },
     {
@@ -275,8 +275,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-server/webauthn-swift.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "d92d409214e2409f8219817e27fb02646087b72f"
+        "revision" : "07f9c205a7f1cb55ed7d90c5a9a2e716943c98e8",
+        "version" : "0.0.1"
       }
     },
     {
