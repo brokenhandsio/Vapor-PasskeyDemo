@@ -1,0 +1,17 @@
+# fly.toml app configuration file generated for vapor-passkey-demo on 2023-06-05T10:35:12+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "vapor-passkey-demo"
+primary_region = "lhr"
+
+[mounts]
+  source = "sqlite_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true

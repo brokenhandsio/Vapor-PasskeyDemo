@@ -10,7 +10,7 @@ public func configure(_ app: Application) throws {
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     app.middleware.use(app.sessions.middleware)
 
-    app.databases.use(.sqlite(.file("db.sqlite")), as: .sqlite)
+    app.databases.use(.sqlite(.file(Environment.get("SQLITE_DATABASE_PATH") ?? "db.sqlite")), as: .sqlite)
 
     app.migrations.add(CreateUser())
     app.migrations.add(CreateWebAuthnCredential())
@@ -18,9 +18,9 @@ public func configure(_ app: Application) throws {
     app.views.use(.leaf)
     app.webAuthn = WebAuthnManager(
         config: WebAuthnConfig(
-            relyingPartyDisplayName: "My Vapor Web App",
-            relyingPartyID: "localhost",
-            relyingPartyOrigin: "http://localhost:8080"
+            relyingPartyDisplayName: Environment.get("RP_DISPLAY_NAME") ?? "Vapor Passkey Demo",
+            relyingPartyID: Environment.get("RP_ID") ?? "localhost",
+            relyingPartyOrigin: Environment.get("RP_ORIGIN") ?? "http://localhost:8080"
         )
     )
 
