@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for passkey-demo-demo on 2023-04-29T15:18:10+02:00
+# fly.toml app configuration file generated for vapor-passkey-demo on 2023-06-05T10:35:12+02:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "passkey-demo-demo"
+app = "vapor-passkey-demo"
 primary_region = "lhr"
 
 [mounts]
