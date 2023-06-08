@@ -52,7 +52,7 @@ func routes(_ app: Application) throws {
     authSessionRoutes.get("signup", use: { req -> Response in
         let username = try req.query.get(String.self, at: "username")
         guard try await User.query(on: req.db).filter(\.$username == username).first() == nil else {
-            throw Abort(.badRequest, reason: "Username already taken.")
+            throw Abort(.conflict, reason: "Username already taken.")
         }
         let user = User(username: username)
         try await user.create(on: req.db)
