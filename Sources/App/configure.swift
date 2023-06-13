@@ -11,7 +11,11 @@ public func configure(_ app: Application) throws {
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     app.middleware.use(app.sessions.middleware)
 
-    app.databases.use(.sqlite(.file(Environment.get("SQLITE_DATABASE_PATH") ?? "db.sqlite")), as: .sqlite)
+    if app.environment == .testing {
+        app.databases.use(.sqlite(.file(Environment.get("SQLITE_DATABASE_PATH") ?? "db.sqlite")), as: .sqlite)
+    } else {
+        app.databases.use(.sqlite(.memory), as: .sqlite)
+    }
 
     app.migrations.add(JobMetadataMigrate())
     app.migrations.add(CreateUser())
