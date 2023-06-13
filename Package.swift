@@ -10,6 +10,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
         .package(url: "https://github.com/vapor/fluent.git", from: "4.0.0"),
         .package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"),
+        .package(url: "https://github.com/m-barthelemy/vapor-queues-fluent-driver.git", from: "3.0.0-beta1"),
         .package(url: "https://github.com/vapor/leaf.git", from: "4.0.0"),
         .package(url: "https://github.com/swift-server/webauthn-swift.git", from: "0.0.1")
     ],
@@ -21,7 +22,8 @@ let package = Package(
                 .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
                 .product(name: "Leaf", package: "leaf"),
                 .product(name: "Vapor", package: "vapor"),
-                .product(name: "WebAuthn", package: "webauthn-swift")
+                .product(name: "WebAuthn", package: "webauthn-swift"),
+                .product(name: "QueuesFluentDriver", package: "vapor-queues-fluent-driver")
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of

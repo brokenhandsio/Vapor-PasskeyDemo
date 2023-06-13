@@ -6,7 +6,7 @@ struct CreateWebAuthnCredential: AsyncMigration {
             .field("id", .string, .identifier(auto: false))
             .field("public_key", .string, .required)
             .field("current_sign_count", .uint32, .required)
-            .field("user_id", .uuid, .required, .references("users", "id"))
+            .field("user_id", .uuid, .required, .references("users", "id", onDelete: .cascade))
             .unique(on: "id")
             .create()
     }

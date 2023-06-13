@@ -1,39 +1,58 @@
 #extend("base"):
   #export("body"):
-    <main class="form-signin w-100 m-auto">
-      <div>
-        <!-- Header -->
-        <img class="mb-4" src="/images/vapor-logo.svg" alt="Vapor Logo" width="72">
-        <h1 class="h3 mb-3 fw-normal">Vapor Passkey Demo</h1>
+    <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8 gap-10">
+      <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+        <img class="mx-auto h-20 w-auto" src="/images/vapor-logo.svg" alt="Vapor logo">
+        <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Vapor Passkey Demo</h2>
+      </div>
 
-        <!-- Error message -->
-        <div class="mb-4 alert alert-warning d-none" id="alert" role="alert">
-          <h6 class="alert-heading">Something went wrong:</h6>
-          <p class="mb-0" id="alert-message"></p>
-        </div>
+      <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+        <form id="signInForm" class="space-y-6">
+          <div>
+            <div class="flex flex-col gap-2 items-center">
+            <p id="authenticateError" class="text-red-600 text-sm hidden">Error</p>
+              <button type="submit" class="btn-primary">
+                <img src="/images/person.badge.key.fill.svg" alt="passkey icon"/>
+                Sign in with Passkey
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
 
-        <!-- Username input -->
-        <div class="form-floating mb-4">
-          <input type="username" class="form-control" id="username" placeholder="Username" autocomplete="username webauthn">
-          <label for="username">Username</label>
-        </div>
 
-        <!--  Sign in button -->
-        <div class="w-100 m-auto mt-3">
-          <p>
-            Tip: You don't have to enter a username to sign in!
-          </p>
-          <button class="w-100 btn btn-lg btn-primary mb-5" type="submit" onclick="getAssertion()">Sign in</button>
-        </div>
+      <div class="flex flex-col justify-center gap-5 sm:mx-auto sm:w-full sm:max-w-sm">
+        <hr class="border-gray-400" />
 
-        <!--  Register text + button -->
-        <div class="w-100 m-auto mt-3">
-          <h6>
-            Don't have an account? Register now!
-          </h6>
-          <button class="w-100 btn btn-lg btn-primary" type="submit" onclick="makeCredential()">Register</button>
+        <p class="text-center font-medium text-gray-600">
+          Don't have an account yet?
+        </p>
+
+
+        <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+          <form class="space-y-6" id="createAccountForm">
+            <div>
+              <label for="name" class="block font-medium leading-6 text-gray-600">Username</label>
+              <div class="mt-2">
+                <input id="username" name="username" type="text" placeholder="vapor-foobar" autocomplete="username" required class="block w-full rounded-lg border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-fuchsia-800">
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2 items-center">
+              <p class="text-center text-sm font-medium text-gray-600">Note: Your demo account will be deleted after 2 hours.</p>
+              <p id="createAccountError" class="text-red-600 text-sm hidden">Error</p>
+              <button type="submit" class="btn-primary">
+                Create account
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    </main>
+    </div>
+
+    <script type="application/javascript" src="/scripts/base64.js"></script>
+    <script type="application/javascript" src="/scripts/utils.js"></script>
+    <script type="application/javascript" src="/scripts/signIn.js"></script>
+    <script type="application/javascript" src="/scripts/createAccount.js"></script>
   #endexport
 #endextend

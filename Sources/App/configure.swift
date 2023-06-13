@@ -3,6 +3,7 @@ import FluentSQLiteDriver
 import Leaf
 import Vapor
 import WebAuthn
+import QueuesFluentDriver
 
 // configures your application
 public func configure(_ app: Application) throws {
@@ -12,8 +13,15 @@ public func configure(_ app: Application) throws {
 
     app.databases.use(.sqlite(.file(Environment.get("SQLITE_DATABASE_PATH") ?? "db.sqlite")), as: .sqlite)
 
+    app.migrations.add(JobMetadataMigrate())
     app.migrations.add(CreateUser())
     app.migrations.add(CreateWebAuthnCredential())
+
+    app.queues.use(.fluent())
+    try app.queues.startInProcessJobs(on: .default)
+
+    app.queues.schedule(DeleteUsersJob()).hourly().at(0)
+    try app.queues.startScheduledJobs()
 
     app.views.use(.leaf)
     app.webAuthn = WebAuthnManager(

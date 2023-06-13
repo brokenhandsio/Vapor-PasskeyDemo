@@ -7,3 +7,4 @@ DerivedData/
 *.sqlite
 .swiftpm
 .env
+tailwindcss

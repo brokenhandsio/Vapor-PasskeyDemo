@@ -11,6 +11,9 @@ final class User: Model, Content {
     @Field(key: "username")
     var username: String
 
+    @Timestamp(key: "created_at", on: .create)
+    var createdAt: Date?
+
     @Children(for: \.$user)
     var credentials: [WebAuthnCredential]
 
