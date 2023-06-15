@@ -9,7 +9,9 @@ import QueuesFluentDriver
 public func configure(_ app: Application) throws {
     // uncomment to serve files from /Public folder
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
+
     app.middleware.use(app.sessions.middleware)
+    app.sessions.use(.memory)
 
     if app.environment == .testing {
         app.databases.use(.sqlite(.file(Environment.get("SQLITE_DATABASE_PATH") ?? "db.sqlite")), as: .sqlite)
@@ -29,9 +31,9 @@ public func configure(_ app: Application) throws {
 
     app.views.use(.leaf)
     app.webAuthn = WebAuthnManager(
-        config: WebAuthnConfig(
-            relyingPartyDisplayName: Environment.get("RP_DISPLAY_NAME") ?? "Vapor Passkey Demo",
+        config: WebAuthnManager.Config(
             relyingPartyID: Environment.get("RP_ID") ?? "localhost",
+            relyingPartyName: Environment.get("RP_DISPLAY_NAME") ?? "Vapor Passkey Demo",
             relyingPartyOrigin: Environment.get("RP_ORIGIN") ?? "http://localhost:8080"
         )
     )
