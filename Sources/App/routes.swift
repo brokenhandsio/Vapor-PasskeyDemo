@@ -46,6 +46,7 @@ func routes(_ app: Application) throws {
 
     protected.post("logout") { req -> Response in
         req.session.destroy()
+        req.auth.logout(User.self)
         return req.redirect(to: "/")
     }
 
@@ -60,10 +61,18 @@ func routes(_ app: Application) throws {
         return req.redirect(to: "makeCredential")
     })
 
-    authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
+    // step 1 for registration
+    authSessionRoutes.get("makeCredential") { (req: Request) -> PublicKeyCredentialCreationOptions in
+        // In order to create a credential we need to know who the user is
         let user = try req.auth.require(User.self)
-        let options = try req.webAuthn.beginRegistration(user: user, attestation: .none)
-        req.session.data["challenge"] = options.challenge.asString()
+
+        // We can then create the options for the client to create a new credential
+        let options = req.webAuthn.beginRegistration(user: user.webAuthnUser)
+
+        // We need to temporarily store the challenge somewhere safe
+        req.session.data["registrationChallenge"] = Data(options.challenge).base64EncodedString()
+
+        // Return the options to the client
         return options
     }
 
@@ -75,11 +84,21 @@ func routes(_ app: Application) throws {
 
     // step 2 for registration
     authSessionRoutes.post("makeCredential") { req -> HTTPStatus in
+        // Obtain the user we're registering a credential for
         let user = try req.auth.require(User.self)
-        guard let challenge = req.session.data["challenge"] else { throw Abort(.unauthorized) }
 
+        // Obtain the challenge we stored on the server for this session
+        guard let challengeEncoded = req.session.data["registrationChallenge"],
+              let challenge = Data(base64Encoded: challengeEncoded) else {
+            throw Abort(.badRequest, reason: "Missing registration session ID")
+        }
+
+        // Delete the challenge from the server to prevent attackers from reusing it
+        req.session.data["registrationChallenge"] = nil
+
+        // Verify the credential the client sent us
         let credential = try await req.webAuthn.finishRegistration(
-            challenge: EncodedBase64(challenge),
+            challenge: [UInt8](challenge),
             credentialCreationData: req.content.decode(RegistrationCredential.self),
             confirmCredentialIDNotRegisteredYet: { credentialID in
                 let existingCredential = try await WebAuthnCredential.query(on: req.db)
@@ -89,6 +108,7 @@ func routes(_ app: Application) throws {
             }
         )
 
+        // If the credential was verified, save it to the database
         try await WebAuthnCredential(from: credential, userID: user.requireID()).save(on: req.db)
 
         return .ok
@@ -96,37 +116,30 @@ func routes(_ app: Application) throws {
 
     // step 1 for authentication
     authSessionRoutes.get("authenticate") { req -> PublicKeyCredentialRequestOptions in
-        // if the user specified a username, we'll fetch a list of saved credentials for that user
-        var allowCredentials: [PublicKeyCredentialDescriptor]?
-        if let username = req.query[String.self, at: "username"] {
-            guard let user = try await User.query(on: req.db).filter(\.$username == username).first() else {
-                throw Abort(.badRequest, reason: "User does not exist")
-            }
+        let options = try req.webAuthn.beginAuthentication()
 
-            let credentials = try await user.$credentials.get(on: req.db)
-            allowCredentials = credentials.map {
-                let idData = [UInt8](URLEncodedBase64($0.id!).urlDecoded.decoded!)
-                return PublicKeyCredentialDescriptor(type: "public-key", id: idData)
-            }
-            guard allowCredentials!.count > 0 else {
-                throw Abort(.badRequest, reason: "User has no registered credentials")
-            }
-        }
-
-        let options = try req.webAuthn.beginAuthentication(allowCredentials: allowCredentials)
-        req.session.data["challenge"] = options.challenge.asString()
+        req.session.data["authChallenge"] = Data(options.challenge).base64EncodedString()
 
         return options
     }
 
     // step 2 for authentication
     authSessionRoutes.post("authenticate") { req -> HTTPStatus in
-        guard let challenge = req.session.data["challenge"] else { throw Abort(.unauthorized) }
+        // Obtain the challenge we stored on the server for this session
+        guard let challengeEncoded = req.session.data["authChallenge"],
+            let challenge = Data(base64Encoded: challengeEncoded) else {
+            throw Abort(.badRequest, reason: "Missing auth session ID")
+        }
+
+        // Delete the challenge from the server to prevent attackers from reusing it
+        req.session.data["authChallenge"] = nil
+
+        // Decode the credential the client sent us
         let authenticationCredential = try req.content.decode(AuthenticationCredential.self)
 
         // find the credential the stranger claims to possess
         guard let credential = try await WebAuthnCredential.query(on: req.db)
-            .filter(\.$id == authenticationCredential.id.asString())
+            .filter(\.$id == authenticationCredential.id.urlDecoded.asString())
             .with(\.$user)
             .first() else {
             throw Abort(.unauthorized)
@@ -135,7 +148,7 @@ func routes(_ app: Application) throws {
         // if we found a credential, use the stored public key to verify the challenge
         let verifiedAuthentication = try req.webAuthn.finishAuthentication(
             credential: authenticationCredential,
-            expectedChallenge: EncodedBase64(challenge).urlEncoded,
+            expectedChallenge: [UInt8](challenge),
             credentialPublicKey: [UInt8](URLEncodedBase64(credential.publicKey).urlDecoded.decoded!),
             credentialCurrentSignCount: credential.currentSignCount
         )
@@ -150,7 +163,18 @@ func routes(_ app: Application) throws {
     }
 }
 
-extension RegistrationCredential: Content {}
-extension AuthenticationCredential: Content {}
-extension PublicKeyCredentialCreationOptions: Content {}
-extension PublicKeyCredentialRequestOptions: Content {}
+extension PublicKeyCredentialCreationOptions: AsyncResponseEncodable {
+    public func encodeResponse(for request: Request) async throws -> Response {
+        var headers = HTTPHeaders()
+        headers.contentType = .json
+        return try Response(status: .ok, headers: headers, body: .init(data: JSONEncoder().encode(self)))
+    }
+}
+
+extension PublicKeyCredentialRequestOptions: AsyncResponseEncodable {
+    public func encodeResponse(for request: Request) async throws -> Response {
+        var headers = HTTPHeaders()
+        headers.contentType = .json
+        return try Response(status: .ok, headers: headers, body: .init(data: JSONEncoder().encode(self)))
+    }
+}

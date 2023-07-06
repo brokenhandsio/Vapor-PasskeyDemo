@@ -25,10 +25,10 @@ final class User: Model, Content {
     }
 }
 
-extension User: WebAuthnUser {
-    var userID: String { id!.uuidString }
-    var name: String { username }
-    var displayName: String { username }
+extension User {
+    var webAuthnUser: PublicKeyCredentialUserEntity {
+        PublicKeyCredentialUserEntity(id: [UInt8](id!.uuidString.utf8), name: username, displayName: username)
+    }
 }
 
 extension User: ModelSessionAuthenticatable {}
