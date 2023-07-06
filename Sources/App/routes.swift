@@ -70,9 +70,7 @@ func routes(_ app: Application) throws {
         let options = req.webAuthn.beginRegistration(user: user.webAuthnUser)
 
         // We need to temporarily store the challenge somewhere safe
-        let registrationSessionID = UUID().uuidString
-        req.session.data["registrationSessionID"] = registrationSessionID
-        try await req.cache.set(registrationSessionID, to: options.challenge)
+        req.session.data["registrationChallenge"] = Data(options.challenge).base64EncodedString()
 
         // Return the options to the client
         return options
@@ -90,17 +88,17 @@ func routes(_ app: Application) throws {
         let user = try req.auth.require(User.self)
 
         // Obtain the challenge we stored on the server for this session
-        guard let registrationSessionID = req.session.data["registrationSessionID"],
-            let challenge = try await req.cache.get(registrationSessionID, as: [UInt8].self) else {
+        guard let challengeEncoded = req.session.data["registrationChallenge"],
+              let challenge = Data(base64Encoded: challengeEncoded) else {
             throw Abort(.badRequest, reason: "Missing registration session ID")
         }
 
         // Delete the challenge from the server to prevent attackers from reusing it
-        try await req.cache.delete(registrationSessionID)
+        req.session.data["registrationChallenge"] = nil
 
         // Verify the credential the client sent us
         let credential = try await req.webAuthn.finishRegistration(
-            challenge: challenge,
+            challenge: [UInt8](challenge),
             credentialCreationData: req.content.decode(RegistrationCredential.self),
             confirmCredentialIDNotRegisteredYet: { credentialID in
                 let existingCredential = try await WebAuthnCredential.query(on: req.db)
@@ -120,9 +118,7 @@ func routes(_ app: Application) throws {
     authSessionRoutes.get("authenticate") { req -> PublicKeyCredentialRequestOptions in
         let options = try req.webAuthn.beginAuthentication()
 
-        let authSessionID = UUID().uuidString
-        req.session.data["authSessionID"] = authSessionID
-        try await req.cache.set(authSessionID, to: options.challenge)
+        req.session.data["authChallenge"] = Data(options.challenge).base64EncodedString()
 
         return options
     }
@@ -130,13 +126,13 @@ func routes(_ app: Application) throws {
     // step 2 for authentication
     authSessionRoutes.post("authenticate") { req -> HTTPStatus in
         // Obtain the challenge we stored on the server for this session
-        guard let authSessionID = req.session.data["authSessionID"],
-            let challenge = try await req.cache.get(authSessionID, as: [UInt8].self) else {
+        guard let challengeEncoded = req.session.data["authChallenge"],
+            let challenge = Data(base64Encoded: challengeEncoded) else {
             throw Abort(.badRequest, reason: "Missing auth session ID")
         }
 
         // Delete the challenge from the server to prevent attackers from reusing it
-        try await req.cache.delete(authSessionID)
+        req.session.data["authChallenge"] = nil
 
         // Decode the credential the client sent us
         let authenticationCredential = try req.content.decode(AuthenticationCredential.self)
@@ -152,7 +148,7 @@ func routes(_ app: Application) throws {
         // if we found a credential, use the stored public key to verify the challenge
         let verifiedAuthentication = try req.webAuthn.finishAuthentication(
             credential: authenticationCredential,
-            expectedChallenge: challenge,
+            expectedChallenge: [UInt8](challenge),
             credentialPublicKey: [UInt8](URLEncodedBase64(credential.publicKey).urlDecoded.decoded!),
             credentialCurrentSignCount: credential.currentSignCount
         )
