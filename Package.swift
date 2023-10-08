@@ -12,7 +12,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"),
         .package(url: "https://github.com/m-barthelemy/vapor-queues-fluent-driver.git", from: "3.0.0-beta1"),
         .package(url: "https://github.com/vapor/leaf.git", from: "4.0.0"),
-        .package(url: "https://github.com/swift-server/webauthn-swift.git", from: "0.0.2")
+        .package(url: "https://github.com/swift-server/webauthn-swift.git", from: "1.0.0-alpha")
     ],
     targets: [
         .target(
