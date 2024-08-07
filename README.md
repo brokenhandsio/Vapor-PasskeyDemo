@@ -1,6 +1,6 @@
-# Vapor Passkey Demo
+<p align="center"><img src="/images/passkeys.webp" alt="Passkeys Logo" width="160"></p>
 
-![Passkeys Logo](/images/passkeys.webp)
+# Vapor Passkey Demo
 
 Proof of concept app for trying to integrate passkeys and WebAuthn into Vapor
 
