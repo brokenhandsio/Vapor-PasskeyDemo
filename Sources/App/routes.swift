@@ -111,12 +111,14 @@ func routes(_ app: Application) throws {
         // If the credential was verified, save it to the database
         try await WebAuthnCredential(from: credential, userID: user.requireID()).save(on: req.db)
 
+        req.auth.logout(User.self)
+        req.session.destroy()
         return .ok
     }
 
     // step 1 for authentication
     authSessionRoutes.get("authenticate") { req -> PublicKeyCredentialRequestOptions in
-        let options = try req.webAuthn.beginAuthentication()
+        let options = req.webAuthn.beginAuthentication()
 
         req.session.data["authChallenge"] = Data(options.challenge).base64EncodedString()
 
@@ -163,7 +165,7 @@ func routes(_ app: Application) throws {
     }
 }
 
-extension PublicKeyCredentialCreationOptions: AsyncResponseEncodable {
+extension PublicKeyCredentialCreationOptions: @retroactive AsyncResponseEncodable {
     public func encodeResponse(for request: Request) async throws -> Response {
         var headers = HTTPHeaders()
         headers.contentType = .json
@@ -171,7 +173,7 @@ extension PublicKeyCredentialCreationOptions: AsyncResponseEncodable {
     }
 }
 
-extension PublicKeyCredentialRequestOptions: AsyncResponseEncodable {
+extension PublicKeyCredentialRequestOptions: @retroactive AsyncResponseEncodable {
     public func encodeResponse(for request: Request) async throws -> Response {
         var headers = HTTPHeaders()
         headers.contentType = .json
