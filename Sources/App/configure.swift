@@ -24,10 +24,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateWebAuthnCredential())
 
     app.queues.use(.fluent())
-    try app.queues.startInProcessJobs(on: .default)
-
     app.queues.schedule(DeleteUsersJob()).hourly().at(0)
-    try app.queues.startScheduledJobs()
 
     app.views.use(.leaf)
     app.webAuthn = WebAuthnManager(
@@ -42,4 +39,7 @@ public func configure(_ app: Application) async throws {
     try routes(app)
 
     try await app.autoMigrate()
+
+    try app.queues.startInProcessJobs(on: .default)
+    try app.queues.startScheduledJobs()
 }
