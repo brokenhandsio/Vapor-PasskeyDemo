@@ -15,7 +15,7 @@ createAccountForm.addEventListener("submit", async function(event) {
         console.log(error);
         return;
     }
-    location.href = "/";
+    location.href = "/private";
 });
 
 

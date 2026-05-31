@@ -111,8 +111,6 @@ func routes(_ app: Application) throws {
         // If the credential was verified, save it to the database
         try await WebAuthnCredential(from: credential, userID: user.requireID()).save(on: req.db)
 
-        req.auth.logout(User.self)
-        req.session.destroy()
         return .ok
     }
 
