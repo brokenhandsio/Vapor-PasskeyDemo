@@ -2,7 +2,7 @@ import Fluent
 import Vapor
 import WebAuthn
 
-final class User: Model, Content {
+final class User: Model, Content, @unchecked Sendable {
     static let schema: String = "users"
 
     @ID

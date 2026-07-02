@@ -6,7 +6,7 @@ import WebAuthn
 import QueuesFluentDriver
 
 // configures your application
-public func configure(_ app: Application) throws {
+public func configure(_ app: Application) async throws {
     // uncomment to serve files from /Public folder
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
@@ -24,14 +24,11 @@ public func configure(_ app: Application) throws {
     app.migrations.add(CreateWebAuthnCredential())
 
     app.queues.use(.fluent())
-    try app.queues.startInProcessJobs(on: .default)
-
     app.queues.schedule(DeleteUsersJob()).hourly().at(0)
-    try app.queues.startScheduledJobs()
 
     app.views.use(.leaf)
     app.webAuthn = WebAuthnManager(
-        config: WebAuthnManager.Config(
+        configuration: WebAuthnManager.Configuration(
             relyingPartyID: Environment.get("RP_ID") ?? "localhost",
             relyingPartyName: Environment.get("RP_DISPLAY_NAME") ?? "Vapor Passkey Demo",
             relyingPartyOrigin: Environment.get("RP_ORIGIN") ?? "http://localhost:8080"
@@ -41,5 +38,8 @@ public func configure(_ app: Application) throws {
     // register routes
     try routes(app)
 
-    try app.autoMigrate().wait()
+    try await app.autoMigrate()
+
+    try app.queues.startInProcessJobs(on: .default)
+    try app.queues.startScheduledJobs()
 }
